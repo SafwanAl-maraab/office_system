@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Request extends Model
+{
+    protected $fillable = [
+        'branch_id',
+        'client_id',
+        'service_type',
+        'request_number',
+        'request_date',
+        'status',
+        'received_by',
+        'notes'
+    ];
+
+    // العلاقات
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'received_by');
+    }
+
+    public function statuses()
+    {
+        return $this->hasMany(RequestStatusHistory::class);
+    }
+
+    public function travels()
+    {
+        return $this->belongsToMany(Travel::class, 'travel_requests')
+            ->withPivot('seat_number')
+            ->withTimestamps();
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(RequestDocument::class);
+    }
+}
