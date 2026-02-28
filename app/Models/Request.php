@@ -50,4 +50,10 @@ class Request extends Model
     {
         return $this->hasMany(RequestDocument::class);
     }
+
+
+    public function requestType()
+    {
+        return $this->belongsTo(RequestType::class);
+    }
 }

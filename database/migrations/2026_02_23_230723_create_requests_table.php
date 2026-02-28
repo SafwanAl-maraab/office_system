@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
 
-            $table->string('service_type'); // passport / card
+         //   $table->string('service_type'); // passport / card
 
             $table->string('request_number')->unique();
 
