@@ -74,34 +74,58 @@
 
             </div>
         </div>
-
         <!-- PASSPORTS -->
         <div>
+
+            @php
+                $isPassportsActive =
+                    request()->routeIs('dashboard.requests.*') ||
+                    request()->routeIs('dashboard.request-types.*');
+            @endphp
+
             <button
                 @click="openMenu === 'passports' ? openMenu=null : openMenu='passports'"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
+        {{ $isPassportsActive
+            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}"
             >
+
                 <div class="flex items-center gap-3">
                     <span>🪪</span>
-                    <span x-show="!collapsed" class="text-sm">الجوازات</span>
+                    <span x-show="!collapsed" class="text-sm font-medium">
+                الجوازات
+            </span>
                 </div>
+
                 <span x-show="!collapsed">⌄</span>
+
             </button>
 
-            <div x-show="openMenu==='passports'" class="mt-2 space-y-1 pr-8">
+            <div x-show="openMenu==='passports' || {{ $isPassportsActive ? 'true' : 'false' }}"
+                 class="mt-2 space-y-1 pr-8">
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                <!-- الطلبات -->
+                <a href="{{ route('dashboard.requests.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.requests.*')
+                ? 'bg-blue-500 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     الطلبات
                 </a>
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                    الحالات
+                <!-- أنواع الطلبات -->
+                <a href="{{ route('dashboard.request-types.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.request-types.*')
+                ? 'bg-blue-500 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                    أنواع الطلبات
                 </a>
 
             </div>
-        </div>
 
-        <!-- FINANCE -->
+        </div>        <!-- FINANCE -->
         <div>
             <button
                 @click="openMenu === 'finance' ? openMenu=null : openMenu='finance'"

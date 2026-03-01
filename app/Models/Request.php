@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+
 class Request extends Model
 {
     protected $fillable = [
         'branch_id',
         'client_id',
-        'service_type',
+        'request_type_id',
         'request_number',
         'request_date',
         'status',
@@ -56,4 +57,18 @@ class Request extends Model
     {
         return $this->belongsTo(RequestType::class);
     }
+
+
+    public function invoice()
+    {
+        return $this->hasOne(\App\Models\Invoice::class, 'reference_id')
+            ->where('reference_type', 'request');
+    }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(\App\Models\RequestStatusHistory::class);
+    }
+
+
 }

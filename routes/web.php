@@ -45,7 +45,59 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
 });
 
 
+//الجوازات
 
+
+use App\Http\Controllers\Frontend\RequestsController;
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->name('dashboard.')
+    ->group(function () {
+
+
+
+        Route::resource('request-types',
+            \App\Http\Controllers\Frontend\RequestTypeController::class);
+
+
+        Route::prefix('requests')
+            ->name('requests.')
+            ->group(function () {
+
+                Route::get('/', [RequestsController::class, 'index'])
+                    ->name('index');
+
+                Route::post('/', [RequestsController::class, 'store'])
+                    ->name('store');
+
+                Route::put('/{request}', [RequestsController::class, 'update'])
+                    ->name('update');
+
+
+
+                Route::delete('/{request}', [RequestsController::class, 'destroy'])
+                    ->name('destroy');
+                Route::get('/{request}', [RequestsController::class, 'show'])
+                    ->name('show');
+
+                Route::post('/{request}/change-status',
+                    [RequestsController::class, 'changeStatus'])
+                    ->name('changeStatus');
+
+
+                Route::post('/{request}/attach-travel',
+                    [RequestsController::class, 'attachTravel'])
+                    ->name('attachTravel');
+
+                Route::delete('/{request}/detach-travel',
+                    [RequestsController::class, 'detachTravel'])
+                    ->name('detachTravel');
+
+
+            });
+
+    });
 
 
 //
