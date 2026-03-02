@@ -80,6 +80,7 @@
             @php
                 $isPassportsActive =
                     request()->routeIs('dashboard.requests.*') ||
+                   request()->routeIs('dashboard.travels.*') ||
                     request()->routeIs('dashboard.request-types.*');
             @endphp
 
@@ -121,6 +122,15 @@
                 ? 'bg-blue-500 text-white'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     أنواع الطلبات
+                </a>
+{{--                //الرحلات--}}
+
+                <a href="{{ route('dashboard.travels.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.travels.*')
+                ? 'bg-blue-500 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                   الرحلات البرية
                 </a>
 
             </div>

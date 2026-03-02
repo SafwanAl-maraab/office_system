@@ -163,14 +163,42 @@ class RequestsController extends Controller
         if (in_array($order->status, ['delivered', 'cancelled', 'rejected'])) {
             abort(403, 'لا يمكن تعديل هذا الطلب.');
         }
-
         $allowedTransitions = [
-            'new' => ['under_review', 'cancelled'],
-            'under_review' => ['preparing', 'rejected'],
-            'preparing' => ['sent_to_south', 'cancelled'],
-            'sent_to_south' => ['received_south'],
-            'received_south' => ['ready'],
-            'ready' => ['delivered'],
+
+            'new' => [
+                'under_review',
+                'cancelled'
+            ],
+
+            'under_review' => [
+                'preparing',
+                'rejected',
+                'cancelled',
+                'new' // رجوع للخلف
+            ],
+
+            'preparing' => [
+                'sent_to_south',
+                'cancelled',
+                'under_review' // رجوع
+            ],
+
+            'sent_to_south' => [
+                'received_south',
+                'cancelled',
+                'preparing' // رجوع
+            ],
+
+            'received_south' => [
+                'ready',
+                'cancelled'
+            ],
+
+            'ready' => [
+                'delivered',
+                'cancelled'
+            ],
+
         ];
 
         $currentStatus = $order->status;
@@ -315,8 +343,16 @@ class RequestsController extends Controller
             abort(403, 'لا يمكن ربط هذا الطلب.');
         }
 
+
+
         $travel = \App\Models\Travel::where('branch_id', $branchId)
             ->findOrFail($request->travel_id);
+
+        if ($travel->requests()->count() >= $travel->capacity) {
+            return back()->withErrors([
+                'error' => 'الرحلة ممتلئة.'
+            ]);
+        }
 
         \DB::transaction(function () use ($order, $travel, $request, $employeeId) {
 

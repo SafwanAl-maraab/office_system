@@ -49,6 +49,7 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
 
 
 use App\Http\Controllers\Frontend\RequestsController;
+use App\Http\Controllers\Frontend\TravelController;
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -56,14 +57,27 @@ Route::middleware(['auth'])
     ->group(function () {
 
 
-
+//انواع الطلبات
         Route::resource('request-types',
             \App\Http\Controllers\Frontend\RequestTypeController::class);
+//الرحلات
 
+        Route::resource('travels', TravelController::class);
+
+        //payment invois in request
+
+        Route::post('payments/{invoice}',
+            [\App\Http\Controllers\Frontend\PaymentController::class, 'store'])
+            ->name('payments.store');
 
         Route::prefix('requests')
             ->name('requests.')
             ->group(function () {
+
+                Route::get('travels/{travel}',
+                    [TravelController::class, 'show'])
+                    ->name('travels.show');
+
 
                 Route::get('/', [RequestsController::class, 'index'])
                     ->name('index');
