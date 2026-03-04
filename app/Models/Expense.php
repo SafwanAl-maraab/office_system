@@ -24,4 +24,8 @@ class Expense extends Model
     {
         return $this->belongsTo(Employee::class, 'created_by');
     }
+    public function currency()
+    {
+        return $this->belongsTo(\App\Models\Currency::class);
+    }
 }

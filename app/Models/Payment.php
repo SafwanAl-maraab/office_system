@@ -37,4 +37,13 @@ class Payment extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
+    public function creator()
+    {
+        return $this->belongsTo(Employee::class, 'created_by');
+    }
 }

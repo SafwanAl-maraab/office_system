@@ -135,36 +135,66 @@
 
             </div>
 
-        </div>        <!-- FINANCE -->
+        </div>
+        <!-- FINANCE -->
+        @php
+            $financeActive = request()->routeIs('dashboard.invoices.*')
+                            || request()->routeIs('dashboard.payments.*')
+                            || request()->routeIs('dashboard.expenses.*');
+        @endphp
+
         <div>
+
             <button
                 @click="openMenu === 'finance' ? openMenu=null : openMenu='finance'"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
+            {{ $financeActive ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}"
             >
                 <div class="flex items-center gap-3">
                     <span>💰</span>
-                    <span x-show="!collapsed" class="text-sm">المالية</span>
+                    <span x-show="!collapsed" class="text-sm font-medium">
+                المالية
+            </span>
                 </div>
+
                 <span x-show="!collapsed">⌄</span>
             </button>
 
-            <div x-show="openMenu==='finance'" class="mt-2 space-y-1 pr-8">
+            <div
+                x-show="openMenu==='finance' || {{ $financeActive ? 'true' : 'false' }}"
+                class="mt-2 space-y-1 pr-8"
+            >
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                {{-- الفواتير --}}
+                <a href="{{ route('dashboard.invoices.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.invoices.*')
+                ? 'bg-blue-600 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     الفواتير
                 </a>
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                {{-- المدفوعات --}}
+                <a href="{{ route('dashboard.payments.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.payments.*')
+                ? 'bg-blue-600 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     المدفوعات
                 </a>
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                {{-- المصاريف --}}
+                <a href="{{ route('dashboard.expenses.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.expenses.*')
+                ? 'bg-blue-600 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     المصاريف
                 </a>
 
             </div>
-        </div>
 
+        </div>
         <!-- CLIENTS -->
         @php
             $clientsActive = request()->routeIs('clients.*');

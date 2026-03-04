@@ -63,11 +63,14 @@ class RequestsController extends Controller
             ->latest()
             ->get();
 
+
+
         return view('frontend.requests.index', compact(
             'requests',
             'requestTypes',
             'clients',
-              'travels'
+              'travels',
+
         ));
     }
     public function store(Request $request)
@@ -138,10 +141,14 @@ class RequestsController extends Controller
             'requestType.currency',
             'employee',
             'invoice.payments',
-            'statusHistories.employee'
+            'statusHistories.employee',
+            'invoice.currency'
         ])
+
+
             ->where('branch_id', $branchId)
             ->findOrFail($id);
+
 
         return view('frontend.requests.show', compact('request'));
     }
@@ -163,6 +170,8 @@ class RequestsController extends Controller
         if (in_array($order->status, ['delivered', 'cancelled', 'rejected'])) {
             abort(403, 'لا يمكن تعديل هذا الطلب.');
         }
+
+
         $allowedTransitions = [
 
             'new' => [
@@ -204,6 +213,9 @@ class RequestsController extends Controller
         $currentStatus = $order->status;
         $newStatus = $request->new_status;
 
+
+
+
         if (!isset($allowedTransitions[$currentStatus]) ||
             !in_array($newStatus, $allowedTransitions[$currentStatus])) {
 
@@ -213,6 +225,14 @@ class RequestsController extends Controller
         // إذا إلغاء أو رفض يجب وجود سبب
         if (in_array($newStatus, ['cancelled', 'rejected']) && empty($request->notes)) {
             return back()->withErrors(['notes' => 'يجب إدخال سبب.']);
+        }
+
+        if (
+            in_array($newStatus, ['ready', 'delivered']) &&
+            $order->invoice &&
+            $order->invoice->remaining_amount > 0
+        ) {
+            $request->notes .= ' | تم تغيير الحالة رغم وجود مبلغ متبقي';
         }
 
         \DB::transaction(function () use ($order, $newStatus, $employeeId, $request) {

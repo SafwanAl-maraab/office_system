@@ -38,7 +38,9 @@
                                bg-white dark:bg-gray-900
                                text-gray-700 dark:text-gray-200"
                         required>
+
                     <option value="">اختر العميل</option>
+
                     @foreach($clients as $client)
                         <option value="{{ $client->id }}">
                             {{ $client->full_name }}
@@ -66,10 +68,11 @@
                     @foreach($requestTypes as $type)
                         <option value="{{ $type->id }}"
                                 data-price="{{ $type->price }}"
-                                data-currency="{{ $type->currency }}">
+                                data-currency="{{ $type->currency->symbol }}">
                             {{ $type->name }}
                         </option>
                     @endforeach
+
                 </select>
             </div>
 
@@ -79,7 +82,7 @@
                     السعر
                 </label>
 
-                <div class="flex gap-2">
+                <div class="flex gap-2 items-center">
                     <input type="number"
                            id="priceField"
                            readonly
@@ -89,7 +92,7 @@
                                   text-gray-700 dark:text-gray-200">
 
                     <span id="currencyLabel"
-                          class="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-sm flex items-center">
+                          class="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-sm">
                         --
                     </span>
                 </div>
@@ -156,6 +159,7 @@
     </div>
 </div>
 
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
@@ -168,7 +172,6 @@
         const priceError = document.getElementById('priceError');
         const currencyLabel = document.getElementById('currencyLabel');
 
-        // فتح وإغلاق المودال
         window.toggleCreateModal = function () {
 
             modal.classList.toggle('hidden');
@@ -180,14 +183,12 @@
             }, 10);
         };
 
-        // اغلاق عند الضغط خارج الصندوق
         modal.addEventListener('click', function (e) {
             if (e.target === modal) {
                 toggleCreateModal();
             }
         });
 
-        // تغيير السعر + العملة
         requestTypeSelect.addEventListener('change', function () {
 
             const selectedOption = this.options[this.selectedIndex];
@@ -199,7 +200,7 @@
             }
 
             const price = parseFloat(selectedOption.dataset.price);
-            const currency = selectedOption.dataset.currency ?? '';
+            const currency = selectedOption.dataset.currency;
 
             priceField.value = price.toFixed(2);
             currencyLabel.textContent = currency;
@@ -209,7 +210,6 @@
             submitBtn.classList.add('opacity-50');
         });
 
-        // التحقق من التطابق
         confirmPriceField.addEventListener('input', function () {
 
             if (parseFloat(confirmPriceField.value) !== parseFloat(priceField.value)) {

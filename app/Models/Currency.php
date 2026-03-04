@@ -14,4 +14,6 @@ class Currency extends Model
         'is_default',
         'status'
     ];
+
+
 }
