@@ -51,4 +51,8 @@ class Employee extends Model
     {
         return $this->hasMany(\App\Models\Expense::class);
     }
+    public function visaStatusChanges()
+{
+    return $this->hasMany(VisaStatusHistory::class, 'changed_by');
+}
 }

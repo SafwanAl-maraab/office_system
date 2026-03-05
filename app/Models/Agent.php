@@ -28,4 +28,9 @@ class Agent extends Model
     {
         return $this->hasMany(Visa::class);
     }
+
+    public function transactions()
+{
+    return $this->hasMany(AgentTransaction::class);
+}
 }

@@ -46,4 +46,6 @@ class TripGroupBus extends Model
     {
         return $this->hasMany(Visa::class);
     }
+
+
 }

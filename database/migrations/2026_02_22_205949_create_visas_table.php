@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('visas', function (Blueprint $table) {
             $table->id();
-
+    $table->string('visa_number')
+              ->unique();
             // العلاقات
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+
             $table->foreignId('visa_type_id')->constrained()->cascadeOnDelete();
 
             $table->foreignId('package_id')->nullable()->constrained('service_packages')->nullOnDelete();

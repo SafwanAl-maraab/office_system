@@ -46,34 +46,76 @@
         </a>
 
         <!-- VISAS MENU -->
-        <div>
-            <button
-                @click="openMenu === 'visas' ? openMenu=null : openMenu='visas'"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-                <div class="flex items-center gap-3">
-                    <span>🛂</span>
-                    <span x-show="!collapsed" class="text-sm">التأشيرات</span>
-                </div>
-                <span x-show="!collapsed">⌄</span>
-            </button>
+      
+        <!-- VISAS MENU -->
+@php
+    $visasActive = request()->routeIs('visas.*') || request()->routeIs('trip-groups.*');
+@endphp
 
-            <div x-show="openMenu==='visas'" class="mt-2 space-y-1 pr-8">
+<!-- VISAS MENU -->
+<div>
 
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                    عرض التأشيرات
-                </a>
-
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                    إضافة تأشيرة
-                </a>
-
-                <a href="#" class="block px-3 py-2 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                    الحملات
-                </a>
-
-            </div>
+    <!-- زر القسم -->
+    <button
+        @click="openMenu === 'visas' ? openMenu=null : openMenu='visas'"
+        class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
+        {{ $visasActive
+            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+        }}"
+    >
+        <div class="flex items-center gap-3">
+            <span>🛂</span>
+            <span x-show="!collapsed" class="text-sm font-medium">
+                التأشيرات
+            </span>
         </div>
+
+        <span x-show="!collapsed"
+              class="transition transform"
+              :class="openMenu === 'visas' ? 'rotate-180' : ''">
+            ⌄
+        </span>
+    </button>
+
+    <!-- الروابط -->
+    <div x-show="openMenu === 'visas' || {{ $visasActive ? 'true' : 'false' }}"
+         x-transition
+         class="mt-2 space-y-1 pr-8">
+
+        <a href="{{ route('visas.index') }}"
+           class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('visas.index')
+                ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+           }}">
+            عرض التأشيرات
+        </a>
+
+        <a href="{{ route('trip-groups.index') }}"
+           class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('trip-groups.*')
+                ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+           }}">
+            الحملات
+        </a>
+
+        <a href="{{ route('visa-types.index') }}"
+   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('visa-types.*')
+        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+   }}">
+
+    أنواع التأشيرات
+
+</a>
+
+    </div>
+
+</div>
+
         <!-- PASSPORTS -->
         <div>
 

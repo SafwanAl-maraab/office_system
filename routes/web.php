@@ -4,7 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ClientController;
 use App\Http\Controllers\Frontend\SettingsController;
-
+use App\Http\Controllers\Frontend\VisaController;
+use App\Http\Controllers\Frontend\TripGroupController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -114,3 +115,119 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+//محمد المعرب تاشيرات
+
+
+
+    
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        Route::get('/visas/search-clients',
+            [VisaController::class,'searchClients'])
+            ->name('visas.searchClients');
+
+});
+
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        // عرض جميع التأشيرات
+        Route::get('/visas', [VisaController::class,'index'])
+            ->name('visas.index');
+
+        // إنشاء تأشيرة
+        Route::post('/visas', [VisaController::class,'store'])
+            ->name('visas.store');
+
+        // تحديث تأشيرة
+        Route::put('/visas/{id}', [VisaController::class,'update'])
+            ->name('visas.update');
+
+        // حذف (لن نستخدمه فعلياً - فقط تغيير حالة)
+        Route::delete('/visas/{id}', [VisaController::class,'destroy'])
+            ->name('visas.destroy');
+
+        // عرض تفاصيل تأشيرة
+        Route::get('/visas/{id}', [VisaController::class,'show'])
+            ->name('visas.show');
+
+        // تغيير الحالة
+        Route::post('/visas/{id}/change-status', [VisaController::class,'changeStatus'])
+            ->name('visas.changeStatus');
+
+        // ربط بحملة
+        Route::post('/visas/{id}/attach-trip-group', [VisaController::class,'attachTripGroup'])
+            ->name('visas.attachTripGroup');
+
+        // ربط بباقة
+        Route::post('/visas/{id}/attach-package', [VisaController::class,'attachPackage'])
+            ->name('visas.attachPackage');
+
+    
+    Route::post('/visas/{id}/add-payment', [VisaController::class,'storePayment'])
+    ->name('visas.addPayment');
+
+    Route::post('/visas/{id}/change-status', [VisaController::class,'changeStatus'])
+    ->name('visas.changeStatus');
+
+//////
+Route::post('/visas/{id}/attach-trip-group',
+    [VisaController::class,'attachTripGroup'])
+    ->name('visas.attachTripGroup');
+
+Route::get('/trip-groups/search',
+    [VisaController::class,'searchTripGroups'])
+    ->name('trip-groups.search');
+
+Route::get('/trip-groups/{id}/seats',
+    [VisaController::class,'getAvailableSeats'])
+    ->name('trip-groups.seats');
+
+       
+    });
+
+
+    use App\Http\Controllers\Frontend\VisaTypeController;
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        Route::get('/visa-types', [VisaTypeController::class,'index'])
+            ->name('visa-types.index');
+
+        Route::post('/visa-types', [VisaTypeController::class,'store'])
+            ->name('visa-types.store');
+
+        Route::put('/visa-types/{id}', [VisaTypeController::class,'update'])
+            ->name('visa-types.update');
+
+        Route::delete('/visa-types/{id}', [VisaTypeController::class,'destroy'])
+            ->name('visa-types.destroy');
+Route::get('/clients/search',[ClientController::class,'search']);
+Route::post('/visas', [VisaController::class,'store'])->name('visas.store');
+    });
+
+  
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        Route::get('/trip-groups', [TripGroupController::class,'index'])
+            ->name('trip-groups.index');
+
+        Route::post('/trip-groups', [TripGroupController::class,'store'])
+            ->name('trip-groups.store');
+
+        Route::post('/trip-groups/attach-bus', [TripGroupController::class,'attachBus'])
+            ->name('trip-groups.attachBus');
+
+            
+
+    });

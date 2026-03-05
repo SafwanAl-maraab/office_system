@@ -25,4 +25,9 @@ class TripGroup extends Model
     {
         return $this->hasMany(Visa::class);
     }
+
+    public function tripGroupBuses()
+{
+    return $this->hasMany(TripGroupBus::class);
+}
 }
