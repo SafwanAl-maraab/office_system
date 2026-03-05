@@ -35,4 +35,13 @@ class Invoice extends Model
     {
         return $this->hasMany(Payment::class);
     }
+    public function currency()
+    {
+        return $this->belongsTo(\App\Models\Currency::class);
+    }
+
+    public function refundInvoices()
+    {
+        return $this->hasMany(Invoice::class,'reversed_invoice_id');
+    }
 }

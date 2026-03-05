@@ -16,11 +16,18 @@ return new class extends Migration
 
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
 
+            $table->foreignId('driver_id')
+                ->nullable()
+                ->constrained('drivers')
+                ->nullOnDelete();
+
             $table->date('travel_date');
+
+            $table->integer('capacity')->default(20);
 
             $table->string('from_location');
             $table->string('to_location');
-
+            $table->string('status')->default('active'); // true = active
             $table->text('notes')->nullable();
 
 

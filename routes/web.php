@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Frontend\ExpenseController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ClientController;
@@ -50,6 +51,10 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
 
 
 use App\Http\Controllers\Frontend\RequestsController;
+use App\Http\Controllers\Frontend\TravelController;
+
+use App\Http\Controllers\Frontend\InvoiceController;
+use App\Http\Controllers\Frontend\PaymentController;
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -57,14 +62,59 @@ Route::middleware(['auth'])
     ->group(function () {
 
 
-
+//انواع الطلبات
         Route::resource('request-types',
             \App\Http\Controllers\Frontend\RequestTypeController::class);
+//الرحلات
+
+        Route::resource('travels', TravelController::class);
+
+        //payment invois in request
+
+        Route::post('payments/{invoice}',
+            [\App\Http\Controllers\Frontend\PaymentController::class, 'store'])
+            ->name('payments.store');
+//invoice
+
+        Route::resource('invoices', InvoiceController::class)
+            ->only(['index','show']);
+
+        Route::get('invoices/{invoice}/pdf',
+            [InvoiceController::class, 'generatePDF'])
+            ->name('invoices.pdf');
+
+
+        Route::post('invoices/{invoice}/refund',
+            [InvoiceController::class,'createRefund'])
+            ->name('invoices.refund');
+        // نهاية الفاتورة
+
+        //المدفوعات
+
+
+
+        Route::resource('payments', PaymentController::class)
+            ->only(['index','store','destroy']);
+
+//        Route::post('payments/refund',
+//            [PaymentController::class,'refund'])
+//            ->name('payments.refund');
+        //نهاية المدفوعات
+
+        //المصروفات
+        Route::resource('expenses', ExpenseController::class)
+            ->only(['index','store']);
 
 
         Route::prefix('requests')
             ->name('requests.')
             ->group(function () {
+
+
+                Route::get('travels/{travel}',
+                    [TravelController::class, 'show'])
+                    ->name('travels.show');
+
 
                 Route::get('/', [RequestsController::class, 'index'])
                     ->name('index');
@@ -99,6 +149,9 @@ Route::middleware(['auth'])
             });
 
     });
+
+
+//end safwan
 
 
 //

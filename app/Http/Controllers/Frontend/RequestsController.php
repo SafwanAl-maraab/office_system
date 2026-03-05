@@ -63,11 +63,14 @@ class RequestsController extends Controller
             ->latest()
             ->get();
 
+
+
         return view('frontend.requests.index', compact(
             'requests',
             'requestTypes',
             'clients',
-              'travels'
+              'travels',
+
         ));
     }
     public function store(Request $request)
@@ -138,10 +141,14 @@ class RequestsController extends Controller
             'requestType.currency',
             'employee',
             'invoice.payments',
-            'statusHistories.employee'
+            'statusHistories.employee',
+            'invoice.currency'
         ])
+
+
             ->where('branch_id', $branchId)
             ->findOrFail($id);
+
 
         return view('frontend.requests.show', compact('request'));
     }
@@ -164,17 +171,50 @@ class RequestsController extends Controller
             abort(403, 'لا يمكن تعديل هذا الطلب.');
         }
 
+
         $allowedTransitions = [
-            'new' => ['under_review', 'cancelled'],
-            'under_review' => ['preparing', 'rejected'],
-            'preparing' => ['sent_to_south', 'cancelled'],
-            'sent_to_south' => ['received_south'],
-            'received_south' => ['ready'],
-            'ready' => ['delivered'],
+
+            'new' => [
+                'under_review',
+                'cancelled'
+            ],
+
+            'under_review' => [
+                'preparing',
+                'rejected',
+                'cancelled',
+                'new' // رجوع للخلف
+            ],
+
+            'preparing' => [
+                'sent_to_south',
+                'cancelled',
+                'under_review' // رجوع
+            ],
+
+            'sent_to_south' => [
+                'received_south',
+                'cancelled',
+                'preparing' // رجوع
+            ],
+
+            'received_south' => [
+                'ready',
+                'cancelled'
+            ],
+
+            'ready' => [
+                'delivered',
+                'cancelled'
+            ],
+
         ];
 
         $currentStatus = $order->status;
         $newStatus = $request->new_status;
+
+
+
 
         if (!isset($allowedTransitions[$currentStatus]) ||
             !in_array($newStatus, $allowedTransitions[$currentStatus])) {
@@ -185,6 +225,14 @@ class RequestsController extends Controller
         // إذا إلغاء أو رفض يجب وجود سبب
         if (in_array($newStatus, ['cancelled', 'rejected']) && empty($request->notes)) {
             return back()->withErrors(['notes' => 'يجب إدخال سبب.']);
+        }
+
+        if (
+            in_array($newStatus, ['ready', 'delivered']) &&
+            $order->invoice &&
+            $order->invoice->remaining_amount > 0
+        ) {
+            $request->notes .= ' | تم تغيير الحالة رغم وجود مبلغ متبقي';
         }
 
         \DB::transaction(function () use ($order, $newStatus, $employeeId, $request) {
@@ -315,8 +363,16 @@ class RequestsController extends Controller
             abort(403, 'لا يمكن ربط هذا الطلب.');
         }
 
+
+
         $travel = \App\Models\Travel::where('branch_id', $branchId)
             ->findOrFail($request->travel_id);
+
+        if ($travel->requests()->count() >= $travel->capacity) {
+            return back()->withErrors([
+                'error' => 'الرحلة ممتلئة.'
+            ]);
+        }
 
         \DB::transaction(function () use ($order, $travel, $request, $employeeId) {
 

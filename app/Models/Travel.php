@@ -6,9 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Travel extends Model
 {
+
+    protected $table = 'travels';
+
     protected $fillable = [
         'branch_id',
         'travel_date',
+        'driver_id',
+        'capacity',
         'from_location',
         'to_location',
         'notes'
@@ -27,4 +32,9 @@ class Travel extends Model
             ->withPivot('seat_number')
             ->withTimestamps();
     }
+    public function driver()
+    {
+        return $this->belongsTo(\App\Models\Driver::class);
+    }
+
 }

@@ -114,32 +114,57 @@
             </div>
 
         </div>
-
         {{-- الفاتورة --}}
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700 space-y-6">
 
-            <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-4">
-                الفاتورة
-            </h2>
+            <div class="flex justify-between items-center">
+
+                <h2 class="font-bold text-gray-800 dark:text-gray-100">
+                    الفاتورة
+                </h2>
+
+                @if($request->invoice->remaining_amount > 0)
+                    <button onclick="openPaymentModal()"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm">
+                        + إضافة دفعة
+                    </button>
+                @endif
+
+            </div>
+
+            @php
+                $currencySymbol = $request->invoice->currency->symbol ?? '';
+            @endphp
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                 <div>
                     <p class="text-sm text-gray-500">الإجمالي</p>
-                    <p class="font-bold">{{ $request->invoice->total_amount }}</p>
+                    <p class="font-bold text-gray-800 dark:text-gray-100">
+                        {{ number_format($request->invoice->total_amount, 2) }}
+                        <span class="text-sm text-gray-500">
+                    {{ $currencySymbol }}
+                </span>
+                    </p>
                 </div>
 
                 <div>
                     <p class="text-sm text-gray-500">المدفوع</p>
                     <p class="font-bold text-green-600">
-                        {{ $request->invoice->paid_amount }}
+                        {{ number_format($request->invoice->paid_amount, 2) }}
+                        <span class="text-sm text-gray-500">
+                    {{ $currencySymbol }}
+                </span>
                     </p>
                 </div>
 
                 <div>
                     <p class="text-sm text-gray-500">المتبقي</p>
                     <p class="font-bold text-red-600">
-                        {{ $request->invoice->remaining_amount }}
+                        {{ number_format($request->invoice->remaining_amount, 2) }}
+                        <span class="text-sm text-gray-500">
+                    {{ $currencySymbol }}
+                </span>
                     </p>
                 </div>
 
@@ -147,7 +172,7 @@
 
         </div>
 
-        {{-- سجل الحالات --}}
+        @include('frontend.requests.modals.add_payment')        {{-- سجل الحالات --}}
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
 
             <h2 class="font-bold text-gray-800 dark:text-gray-100 mb-4">

@@ -1,7 +1,10 @@
 <div id="statusModal"
      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
 
-    <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-xl p-6 relative">
+    <div onclick="closeStatusModal()" class="absolute inset-0"></div>
+
+    <div class="relative bg-white dark:bg-gray-800 w-full max-w-md
+                rounded-2xl shadow-xl p-6 mx-4">
 
         <button onclick="closeStatusModal()"
                 class="absolute top-3 left-3 text-gray-500 hover:text-red-500 text-xl">
@@ -23,6 +26,7 @@
                     </label>
 
                     <select name="new_status"
+                            id="statusSelect"
                             class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600
                                    bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
                             required>
@@ -37,6 +41,12 @@
                         <option value="rejected">مرفوض</option>
 
                     </select>
+
+                    <div id="paymentWarning"
+                         class="hidden mt-2 text-sm text-red-600 font-semibold">
+                        ⚠ لم يتم اكتمال الدفع في الفاتورة
+                    </div>
+
                 </div>
 
                 <div>
@@ -70,14 +80,25 @@
 
     </div>
 </div>
-
-
 <script>
-    function openStatusModal(requestId) {
+
+    let currentRemaining = 0;
+
+    function openStatusModal(requestId, currentStatus, remainingAmount) {
+
         const modal = document.getElementById('statusModal');
         const form = document.getElementById('statusForm');
+        const select = document.getElementById('statusSelect');
 
+        currentRemaining = remainingAmount;
+
+        // تحديد الرابط
         form.action = '/dashboard/requests/' + requestId + '/change-status';
+
+        // تحديد الحالة الحالية تلقائيًا
+        select.value = currentStatus;
+
+        checkPaymentWarning();
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -88,4 +109,23 @@
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
+
+    function checkPaymentWarning() {
+
+        const selected = document.getElementById('statusSelect').value;
+        const warning = document.getElementById('paymentWarning');
+
+        if (
+            currentRemaining > 0 &&
+            (selected === 'ready' || selected === 'delivered')
+        ) {
+            warning.classList.remove('hidden');
+        } else {
+            warning.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('statusSelect')
+        .addEventListener('change', checkPaymentWarning);
+
 </script>

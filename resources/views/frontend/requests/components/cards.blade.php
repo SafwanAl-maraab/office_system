@@ -102,8 +102,13 @@
                         تعديل
                     </button>
 
-                    <button onclick="openStatusModal({{ $request->id }})"
-                            class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded-lg">
+                    <button
+                        onclick="openStatusModal(
+        {{ $request->id }},
+        '{{ $request->status }}',
+        {{ $request->invoice->remaining_amount ?? 0 }}
+    )"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-xs">
                         تغيير الحالة
                     </button>
 
