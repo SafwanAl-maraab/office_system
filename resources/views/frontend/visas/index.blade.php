@@ -272,6 +272,8 @@
 @include('frontend.visas.partials.create-modal')
 
 
+@include('frontend.visas.partials.trip_group')
+
 <script>
 function openStatusModal(id, currentStatus) {
     const form = document.getElementById('statusForm');

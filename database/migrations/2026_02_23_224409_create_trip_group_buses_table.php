@@ -28,6 +28,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+
             // ملاحظات
             $table->text('notes')->nullable();
 

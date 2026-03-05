@@ -12,6 +12,7 @@ class Travel extends Model
     protected $fillable = [
         'branch_id',
         'travel_date',
+        
         'driver_id',
         'capacity',
         'from_location',

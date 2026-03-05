@@ -7,7 +7,7 @@
         <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-white">
             ربط التأشيرة بحملة
         </h2>
-
+ @foreach($visas as $visa)
         <form method="POST"
               action="{{ route('visas.attachTripGroup',$visa->id) }}"
               class="space-y-8">
@@ -55,6 +55,7 @@
             </div>
 
         </form>
+        @endforeach
 
     </div>
 </div>
