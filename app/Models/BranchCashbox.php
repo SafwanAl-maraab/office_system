@@ -18,4 +18,10 @@ class BranchCashbox extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
 }

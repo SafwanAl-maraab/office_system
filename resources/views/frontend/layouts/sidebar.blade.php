@@ -182,7 +182,8 @@
         @php
             $financeActive = request()->routeIs('dashboard.invoices.*')
                             || request()->routeIs('dashboard.payments.*')
-                            || request()->routeIs('dashboard.expenses.*');
+                            || request()->routeIs('dashboard.expenses.*')
+               || request()->routeIs('dashboard.cashboxes.*');
         @endphp
 
         <div>
@@ -233,6 +234,19 @@
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     المصاريف
                 </a>
+
+
+                {{-- إدارة الخزنة --}}
+                <a href="{{ route('dashboard.cashboxes.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('dashboard.cashboxes.*')
+        ? 'bg-blue-600 text-white'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+                    إدارة الخزنة
+
+                </a>
+
 
             </div>
 

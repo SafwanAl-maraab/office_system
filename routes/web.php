@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Frontend\CashboxController;
 use App\Http\Controllers\Frontend\ExpenseController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,27 @@ Route::middleware(['auth'])
         Route::resource('expenses', ExpenseController::class)
             ->only(['index','store']);
 
+        //
+        //الخزنات
+
+
+        Route::prefix('cashboxes')
+            ->name('cashboxes.')
+            ->group(function () {
+
+                Route::get('/', [CashboxController::class, 'index'])
+                    ->name('index');
+
+                Route::post('/store', [CashboxController::class, 'store'])
+                    ->name('store');
+
+                Route::put('/update/{id}', [CashboxController::class, 'update'])
+                    ->name('update');
+
+            });
+
+
+        //الطلبات
 
         Route::prefix('requests')
             ->name('requests.')
@@ -147,6 +169,9 @@ Route::middleware(['auth'])
 
 
             });
+
+
+
 
     });
 

@@ -1,34 +1,72 @@
-<div id="balanceModal"
+<div id="createCurrencyModal"
      class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
 
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-md">
+    <div class="bg-white dark:bg-gray-800
+            w-full max-w-md p-6 rounded-2xl">
 
         <h2 class="text-lg font-bold mb-4">
-            تعديل رصيد الخزنة
+            إضافة عملة جديدة
         </h2>
 
-        <form method="POST" id="balanceForm">
+        <form method="POST"
+              action="{{ route('dashboard.cashboxes.store') }}">
+
             @csrf
 
             <div class="space-y-4">
 
                 <div>
-                    <label>الرصيد الجديد</label>
-                    <input type="number" step="0.01" name="balance"
-                           id="balanceInput"
+
+                    <label class="text-sm">اسم العملة</label>
+
+                    <input type="text"
+                           name="name"
+                           required
+
                            class="w-full border rounded-lg px-3 py-2">
+
                 </div>
+
+
+                <div>
+
+                    <label class="text-sm">رمز العملة</label>
+
+                    <input type="text"
+                           name="symbol"
+                           required
+
+                           class="w-full border rounded-lg px-3 py-2">
+
+                </div>
+
+
+                <div>
+
+                    <label class="text-sm">كود العملة</label>
+
+                    <input type="text"
+                           name="code"
+
+                           class="w-full border rounded-lg px-3 py-2">
+
+                </div>
+
 
                 <div class="flex justify-end gap-3 pt-4">
 
                     <button type="button"
-                            onclick="closeBalanceModal()"
+                            onclick="closeCreateCurrencyModal()"
                             class="bg-gray-400 text-white px-4 py-2 rounded-lg">
+
                         إلغاء
+
                     </button>
 
-                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg">
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+
                         حفظ
+
                     </button>
 
                 </div>
@@ -38,26 +76,23 @@
         </form>
 
     </div>
+
 </div>
+
 
 <script>
 
-    function openBalanceModal(id,balance){
+    function openCreateCurrencyModal(){
 
-        document.getElementById('balanceModal').classList.remove('hidden');
-        document.getElementById('balanceModal').classList.add('flex');
-
-        document.getElementById('balanceInput').value=balance;
-
-        document.getElementById('balanceForm').action =
-            '/dashboard/cashboxes/balance/'+id;
+        document.getElementById('createCurrencyModal').classList.remove('hidden')
+        document.getElementById('createCurrencyModal').classList.add('flex')
 
     }
 
-    function closeBalanceModal(){
+    function closeCreateCurrencyModal(){
 
-        document.getElementById('balanceModal').classList.add('hidden');
-        document.getElementById('balanceModal').classList.remove('flex');
+        document.getElementById('createCurrencyModal').classList.add('hidden')
+        document.getElementById('createCurrencyModal').classList.remove('flex')
 
     }
 

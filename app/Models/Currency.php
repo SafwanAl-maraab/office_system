@@ -16,4 +16,14 @@ class Currency extends Model
     ];
 
 
+    public function cashbox()
+    {
+        return $this->hasMany(BranchCashbox::class);
+    }
+
+    public function invoice()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
 }
