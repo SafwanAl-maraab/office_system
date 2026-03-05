@@ -170,11 +170,8 @@ Route::middleware(['auth'])
 
             });
 
-
-
-
     });
-
+Route::get('/clients/search',[RequestsController::class,'search']);
 
 //end safwan
 
@@ -198,7 +195,7 @@ require __DIR__.'/auth.php';
 
 
 
-    
+
 Route::middleware(['auth'])
     ->prefix('dashboard')
     ->group(function () {
@@ -246,7 +243,7 @@ Route::middleware(['auth'])
         Route::post('/visas/{id}/attach-package', [VisaController::class,'attachPackage'])
             ->name('visas.attachPackage');
 
-    
+
     Route::post('/visas/{id}/add-payment', [VisaController::class,'storePayment'])
     ->name('visas.addPayment');
 
@@ -266,7 +263,7 @@ Route::get('/trip-groups/{id}/seats',
     [VisaController::class,'getAvailableSeats'])
     ->name('trip-groups.seats');
 
-       
+
     });
 
 
@@ -291,7 +288,7 @@ Route::get('/clients/search',[ClientController::class,'search']);
 Route::post('/visas', [VisaController::class,'store'])->name('visas.store');
     });
 
-  
+
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -306,6 +303,6 @@ Route::middleware(['auth'])
         Route::post('/trip-groups/attach-bus', [TripGroupController::class,'attachBus'])
             ->name('trip-groups.attachBus');
 
-            
+
 
     });

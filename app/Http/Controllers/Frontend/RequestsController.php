@@ -121,6 +121,7 @@ class RequestsController extends Controller
                 'total_amount' => $requestType->price,
                 'paid_amount' => 0,
                 'remaining_amount' => $requestType->price,
+                'cost' => $request->cost_price,
                 'currency_id' => $requestType->currency_id,
                 'status' => 'unpaid',
                 'is_refund' => false,

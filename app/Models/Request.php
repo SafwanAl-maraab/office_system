@@ -14,6 +14,7 @@ class Request extends Model
         'request_number',
         'request_date',
         'status',
+
         'received_by',
         'notes'
     ];

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('total_amount', 12, 2);
             $table->decimal('paid_amount', 12, 2)->default(0);
             $table->decimal('remaining_amount', 12, 2);
-
+            $table->decimal('cost', 12, 2);
             $table->foreignId('currency_id')->constrained();
 
             $table->string('status')->default('unpaid');

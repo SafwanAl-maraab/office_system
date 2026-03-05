@@ -15,6 +15,7 @@ class Invoice extends Model
         'total_amount',
         'paid_amount',
         'remaining_amount',
+        'cost',
         'currency_id',
         'status',
         'is_refund',
