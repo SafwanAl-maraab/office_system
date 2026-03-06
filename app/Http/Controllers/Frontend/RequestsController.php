@@ -82,6 +82,7 @@ class RequestsController extends Controller
             'client_id' => 'required|exists:clients,id',
             'request_type_id' => 'required|exists:request_types,id',
             'confirm_price' => 'required|numeric|min:0',
+            'cost_price' => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $branchId, $employeeId) {
@@ -95,6 +96,12 @@ class RequestsController extends Controller
             if ((float)$request->confirm_price !== (float)$requestType->price) {
                 abort(403, 'السعر غير مطابق للسعر المحدد.');
             }
+
+
+            if ($request->confirm_price <= $request->cost_price) {
+                abort(403, 'السعر اكبر من التكلفة.');
+            }
+
 
             // توليد رقم طلب تسلسلي
             $lastId = \App\Models\Request::max('id') + 1;
