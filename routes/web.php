@@ -171,8 +171,75 @@ Route::middleware(['auth'])
             });
 
     });
-Route::get('/clients/search',[RequestsController::class,'search']);
+//الرحلات الخارجية
 
+use App\Http\Controllers\Frontend\TripController;
+
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+
+        Route::get('/trips', [TripController::class,'index'])
+            ->name('trips.index');
+
+        Route::post('/trips', [TripController::class,'store'])
+            ->name('trips.store');
+
+        Route::put('/trips/{trip}', [TripController::class,'update'])
+            ->name('trips.update');
+
+        Route::delete('/trips/{trip}', [TripController::class,'destroy'])
+            ->name('trips.destroy');
+
+    });
+//الحجوزات
+
+
+use App\Http\Controllers\Frontend\BookingController;
+
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOOKINGS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/bookings', [BookingController::class, 'index'])
+            ->name('bookings.index');
+
+        Route::post('/bookings', [BookingController::class, 'store'])
+            ->name('bookings.store');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEARCH CLIENT
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/clients/search', [BookingController::class, 'searchClient'])
+            ->name('clients.search');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET TRIP INFO (for booking form)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/trips/{trip}', [BookingController::class, 'getTrip'])
+            ->name('trips.info');
+
+
+        Route::get('/bookings/{booking}', [BookingController::class, 'show'])
+            ->name('bookings.show');
+
+    });
 //end safwan
 
 
