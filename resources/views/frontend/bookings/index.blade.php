@@ -12,12 +12,13 @@
                 الحجوزات
             </h1>
 
-            <a href="#"
-               class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow">
+            <button
+                onclick="openBookingModal()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow transition">
 
-                حجز جديد
+                + حجز جديد
 
-            </a>
+            </button>
 
         </div>
 

@@ -7,7 +7,7 @@ use App\Http\Controllers\Frontend\ClientController;
 use App\Http\Controllers\Frontend\SettingsController;
 use App\Http\Controllers\Frontend\VisaController;
 use App\Http\Controllers\Frontend\TripGroupController;
-
+use App\Http\Controllers\Frontend\BookingController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -227,8 +227,14 @@ Route::middleware(['auth'])
     });
 ////
 
+<<<<<<< HEAD
 use App\Http\Controllers\Frontend\BookingController;
 
+=======
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+>>>>>>> 576b64b81cfc27e29a936e8cf6f17d69c62800ee
 
 /*
 |--------------------------------------------------------------------------
@@ -273,6 +279,7 @@ Route::middleware(['auth'])->group(function () {
 
 
 //end safwan
+
 
 
 //
