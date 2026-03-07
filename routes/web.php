@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Frontend\CashboxController;
 use App\Http\Controllers\Frontend\ExpenseController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -106,27 +105,6 @@ Route::middleware(['auth'])
         Route::resource('expenses', ExpenseController::class)
             ->only(['index','store']);
 
-        //
-        //الخزنات
-
-
-        Route::prefix('cashboxes')
-            ->name('cashboxes.')
-            ->group(function () {
-
-                Route::get('/', [CashboxController::class, 'index'])
-                    ->name('index');
-
-                Route::post('/store', [CashboxController::class, 'store'])
-                    ->name('store');
-
-                Route::put('/update/{id}', [CashboxController::class, 'update'])
-                    ->name('update');
-
-            });
-
-
-        //الطلبات
 
         Route::prefix('requests')
             ->name('requests.')
@@ -171,30 +149,9 @@ Route::middleware(['auth'])
             });
 
     });
-//الرحلات الخارجية
-
-use App\Http\Controllers\Frontend\TripController;
-
-Route::middleware(['auth'])
-    ->prefix('frontend')
-    ->group(function () {
-
-        Route::get('/trips', [TripController::class,'index'])
-            ->name('trips.index');
-
-        Route::post('/trips', [TripController::class,'store'])
-            ->name('trips.store');
-
-        Route::put('/trips/{trip}', [TripController::class,'update'])
-            ->name('trips.update');
-
-        Route::delete('/trips/{trip}', [TripController::class,'destroy'])
-            ->name('trips.destroy');
-
-    });
-//الحجوزات
 
 
+<<<<<<< HEAD
 use App\Http\Controllers\Frontend\BookingController;
 
 Route::middleware(['auth'])
@@ -236,6 +193,8 @@ Route::middleware(['auth'])
             ->name('trips.info');
 
     });
+=======
+>>>>>>> 9c4fd72e744eb5e112e1cde538135839b8ca85b4
 //end safwan
 
 
@@ -258,7 +217,7 @@ require __DIR__.'/auth.php';
 
 
 
-
+    
 Route::middleware(['auth'])
     ->prefix('dashboard')
     ->group(function () {
@@ -306,7 +265,7 @@ Route::middleware(['auth'])
         Route::post('/visas/{id}/attach-package', [VisaController::class,'attachPackage'])
             ->name('visas.attachPackage');
 
-
+    
     Route::post('/visas/{id}/add-payment', [VisaController::class,'storePayment'])
     ->name('visas.addPayment');
 
@@ -326,7 +285,7 @@ Route::get('/trip-groups/{id}/seats',
     [VisaController::class,'getAvailableSeats'])
     ->name('trip-groups.seats');
 
-
+       
     });
 
 
@@ -351,7 +310,7 @@ Route::get('/clients/search',[ClientController::class,'search']);
 Route::post('/visas', [VisaController::class,'store'])->name('visas.store');
     });
 
-
+  
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -366,6 +325,6 @@ Route::middleware(['auth'])
         Route::post('/trip-groups/attach-bus', [TripGroupController::class,'attachBus'])
             ->name('trip-groups.attachBus');
 
-
-
+         
+           
     });
