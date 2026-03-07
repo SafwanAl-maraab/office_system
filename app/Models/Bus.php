@@ -35,5 +35,8 @@ class Bus extends Model
         return $this->belongsTo(Branch::class);
     }
 
-
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
 }
