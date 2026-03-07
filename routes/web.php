@@ -282,40 +282,5 @@ Route::middleware(['auth'])
             ->name('trip-groups.attachBus');
 
          
-            
-             // الحجوزات محمدالمعرب 
-          Route::middleware(['auth'])
-    ->prefix('dashboard')
-    ->group(function () {
-
-        Route::get('/bookings',
-            [\App\Http\Controllers\Frontend\BookingController::class,'index'])
-            ->name('bookings.index');
-
-        // صفحة إنشاء الحجز
-        Route::get('/bookings/create',
-            [\App\Http\Controllers\Frontend\BookingController::class,'create'])
-            ->name('bookings.create');
-
-        // حفظ الحجز
-        Route::post('/bookings',
-            [\App\Http\Controllers\Frontend\BookingController::class,'store'])
-            ->name('bookings.store');
-
-        // عرض الحجز
-        Route::get('/bookings/{booking}',
-            [\App\Http\Controllers\Frontend\BookingController::class,'show'])
-            ->name('bookings.show');
-
-        // حذف
-        Route::delete('/bookings/{booking}',
-            [\App\Http\Controllers\Frontend\BookingController::class,'destroy'])
-            ->name('bookings.destroy');
-
-        // الدفع
-        Route::post('/bookings/{booking}/payment',
-            [\App\Http\Controllers\Frontend\BookingController::class,'addPayment'])
-            ->name('bookings.payment');
-
-    });
+           
     });
