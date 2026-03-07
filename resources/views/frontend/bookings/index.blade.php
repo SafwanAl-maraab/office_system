@@ -2,177 +2,142 @@
 
 @section('content')
 
-    <div class="p-6 space-y-6">
+    <div class="p-6">
 
-        {{-- العنوان والزر --}}
+        <!-- العنوان -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
 
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
                 الحجوزات
             </h1>
 
-            <button
-                onclick="openBookingModal()"
-                class="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-xl shadow">
+            <!-- البحث -->
+            <form method="GET" action="{{ route('bookings.index') }}" class="flex gap-2">
 
-                + حجز جديد
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ $search }}"
+                    placeholder="بحث باسم العميل..."
+                    class="border rounded-lg px-4 py-2 w-64
+                dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
 
-            </button>
+                <button
+                    type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
 
-        </div>
+                    بحث
 
+                </button>
 
-
-        {{-- بطاقات الاحصائيات --}}
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow">
-                <div class="text-gray-500 text-sm">اجمالي الحجوزات</div>
-                <div class="text-2xl font-bold text-gray-800 dark:text-white">
-                    {{ $bookings->total() }}
-                </div>
-            </div>
-
-
-            <div class="bg-green-100 dark:bg-green-900 p-5 rounded-xl shadow">
-                <div class="text-green-700 dark:text-green-300 text-sm">المؤكدة</div>
-                <div class="text-2xl font-bold">
-                    {{ \App\Models\Booking::where('status','confirmed')->count() }}
-                </div>
-            </div>
-
-
-            <div class="bg-yellow-100 dark:bg-yellow-900 p-5 rounded-xl shadow">
-                <div class="text-yellow-700 dark:text-yellow-300 text-sm">قيد الانتظار</div>
-                <div class="text-2xl font-bold">
-                    {{ \App\Models\Booking::where('status','pending')->count() }}
-                </div>
-            </div>
-
-
-            <div class="bg-red-100 dark:bg-red-900 p-5 rounded-xl shadow">
-                <div class="text-red-700 dark:text-red-300 text-sm">الملغية</div>
-                <div class="text-2xl font-bold">
-                    {{ \App\Models\Booking::where('status','cancelled')->count() }}
-                </div>
-            </div>
+            </form>
 
         </div>
 
 
 
-        {{-- البحث --}}
+        <!-- بطاقات الحجوزات -->
 
-        <form method="GET" class="flex flex-col md:flex-row gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <input
-                type="text"
-                name="search"
-                value="{{ $search }}"
-                placeholder="بحث باسم العميل..."
-                class="border dark:border-gray-700 dark:bg-gray-800 dark:text-white px-4 py-2 rounded-lg w-full md:w-72">
+            @forelse($bookings as $booking)
 
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
 
-            <button class="bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg">
-                بحث
-            </button>
+                    <!-- العميل -->
+                    <div class="mb-3">
 
-        </form>
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white">
 
-
-
-        {{-- البطاقات --}}
-
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-            @foreach($bookings as $booking)
-
-                <div class="bg-white dark:bg-gray-800 shadow hover:shadow-xl transition rounded-xl p-5 space-y-3">
-
-                    {{-- اسم العميل --}}
-
-                    <div class="flex justify-between items-center">
-
-                        <h2 class="font-bold text-lg text-gray-800 dark:text-white">
                             {{ $booking->client->full_name }}
+
                         </h2>
 
-                        <span class="text-xs px-3 py-1 rounded-full
-@if($booking->status=='confirmed') bg-green-200 text-green-800
-@elseif($booking->status=='pending') bg-yellow-200 text-yellow-800
-@else bg-red-200 text-red-800
-@endif
-">
+                        <p class="text-sm text-gray-500">
 
-{{ $booking->status }}
+                            {{ $booking->client->phone }}
 
-</span>
+                        </p>
 
                     </div>
 
 
-
-                    {{-- معلومات الرحلة --}}
+                    <!-- الرحلة -->
 
                     <div class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
 
                         <div>
-                            ✈ الرحلة:
-                            <b>
-                                {{ $booking->trip->from_city }}
-                                →
-                                {{ $booking->trip->to_city }}
-                            </b>
+
+                            الرحلة :
+                            <span class="font-semibold">
+
+                        {{ $booking->trip->from_city ?? '-' }}
+                        →
+                        {{ $booking->trip->to_city ?? '-' }}
+
+                    </span>
+
                         </div>
 
-
                         <div>
-                            🚌 الباص:
-                            <b>
-                                {{ $booking->trip->bus->plate_number }}
-                            </b>
-                        </div>
 
+                            السعر :
+                            <span class="font-semibold text-green-600">
 
-                        <div>
-                            💰 السعر النهائي:
-                            <b>
-                                {{ $booking->final_price }}
+                        {{ number_format($booking->final_price) }}
+
                                 {{ $booking->currency->symbol ?? '' }}
-                            </b>
+
+                    </span>
+
+                        </div>
+
+                        <div>
+
+                            التاريخ :
+
+                            {{ $booking->created_at->format('Y-m-d') }}
+
                         </div>
 
                     </div>
 
 
+                    <!-- الحالة -->
 
-                    {{-- ازرار التحكم --}}
+                    <div class="mt-3">
 
-                    <div class="flex justify-between pt-3 border-t dark:border-gray-700">
+                        @if($booking->status == 'confirmed')
+
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+
+                    مؤكد
+
+                </span>
+
+                        @else
+
+                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs">
+
+                    {{ $booking->status }}
+
+                </span>
+
+                        @endif
+
+                    </div>
+
+
+                    <!-- زر التفاصيل -->
+
+                    <div class="mt-4">
 
                         <a
-                            href="#"
+                            href="{{ route('bookings.show', $booking->id) }}"
                             class="text-blue-600 hover:underline text-sm">
 
-                            عرض
-
-                        </a>
-
-                        <a
-                            href="#"
-                            class="text-green-600 hover:underline text-sm">
-
-                            تعديل
-
-                        </a>
-
-                        <a
-                            href="#"
-                            class="text-red-600 hover:underline text-sm">
-
-                            حذف
+                            عرض التفاصيل
 
                         </a>
 
@@ -180,13 +145,21 @@
 
                 </div>
 
-            @endforeach
+            @empty
+
+                <div class="col-span-3 text-center text-gray-500">
+
+                    لا يوجد حجوزات
+
+                </div>
+
+            @endforelse
 
         </div>
 
 
 
-        {{-- pagination --}}
+        <!-- Pagination -->
 
         <div class="mt-8">
 
@@ -195,9 +168,5 @@
         </div>
 
     </div>
-
-
-
-    @include('frontend.bookings.parts.create')
 
 @endsection

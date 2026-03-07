@@ -3,16 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\Trip;
-use App\Models\Currency;
-
-
-use Illuminate\Support\Facades\DB;
 use App\Models\Invoice;
 use App\Models\Payment;
 
@@ -27,32 +23,38 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
+        $branchId = auth()->user()->employee->branch_id;
+
         $search = $request->search;
 
         $bookings = Booking::with([
             'client',
-
-
+            'trip'
         ])
+            ->where('branch_id', $branchId)
 
             ->when($search, function ($query) use ($search) {
 
                 $query->whereHas('client', function ($q) use ($search) {
+
                     $q->where('full_name', 'LIKE', "%{$search}%");
+
                 });
 
             })
 
             ->latest()
+
             ->paginate(12)
+
             ->withQueryString();
 
-
-        return view('frontend.bookings.index', compact(
-            'bookings',
-            'search'
-        ));
+        return view(
+            'frontend.bookings.index',
+            compact('bookings', 'search')
+        );
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -68,9 +70,11 @@ class BookingController extends Controller
         $request->validate([
 
             'client_id' => 'required|exists:clients,id',
+
             'trip_id' => 'required|exists:trips,id',
 
             'sale_price' => 'required|numeric',
+
             'discount_percent' => 'nullable|numeric',
 
             'paid_amount' => 'nullable|numeric'
@@ -171,9 +175,7 @@ class BookingController extends Controller
 
                 'cost' => $purchase,
 
-                'status' => $paid == 0 ? 'unpaid' : ($remaining > 0 ? 'partial' : 'paid'),
-
-
+                'status' => $paid == 0 ? 'unpaid' : ($remaining > 0 ? 'partial' : 'paid')
 
             ]);
 
@@ -181,11 +183,11 @@ class BookingController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | إنشاء الدفع إذا كان المدفوع > 0
+            | إنشاء الدفع إذا كان هناك مبلغ مدفوع
             |--------------------------------------------------------------------------
             */
 
-            if($paid > 0){
+            if ($paid > 0) {
 
                 Payment::create([
 
@@ -201,9 +203,7 @@ class BookingController extends Controller
 
                     'payment_method' => 'cash',
 
-                    'created_by' => auth()->id(),
-
-
+                    'created_by' => auth()->id()
 
                 ]);
 
@@ -215,7 +215,7 @@ class BookingController extends Controller
 
             return redirect()
                 ->route('bookings.index')
-                ->with('success','تم إنشاء الحجز والفاتورة بنجاح');
+                ->with('success', 'تم إنشاء الحجز والفاتورة بنجاح');
 
         }
 
@@ -223,11 +223,15 @@ class BookingController extends Controller
 
             DB::rollBack();
 
-            return back()->with('error',$e->getMessage());
+            return back()->with(
+                'error',
+                'حدث خطأ أثناء إنشاء الحجز'
+            );
 
         }
 
     }
+
 
 
     /*
@@ -238,10 +242,13 @@ class BookingController extends Controller
 
     public function searchClient(Request $request)
     {
+
         $q = $request->q;
 
-        $clients = Client::where('full_name', 'like', "%$q%")
+        $clients = Client::where('full_name', 'LIKE', "%{$q}%")
+
             ->limit(10)
+
             ->get([
                 'id',
                 'full_name',
@@ -251,37 +258,51 @@ class BookingController extends Controller
             ]);
 
         return response()->json($clients);
+
     }
 
 
 
     /*
     |--------------------------------------------------------------------------
-    | جلب بيانات الرحلة للحجز
+    | جلب بيانات الرحلة
     |--------------------------------------------------------------------------
     */
 
     public function getTrip($id)
     {
-        $trip = Trip::with('bus','currency')
+
+        $trip = Trip::with('bus', 'currency')
+
             ->findOrFail($id);
 
         return response()->json([
 
             'purchase_price' => $trip->purchase_price,
+
             'sale_price' => $trip->sale_price,
 
             'currency_id' => $trip->currency_id,
+
             'currency' => $trip->currency->symbol ?? '',
 
-            'bus' => $trip->bus->plate_number,
+            'bus' => $trip->bus->plate_number ?? '',
 
             'from_city' => $trip->from_city,
+
             'to_city' => $trip->to_city
 
         ]);
+
     }
 
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | عرض الحجز
+    |--------------------------------------------------------------------------
+    */
 
     public function show($id)
     {
@@ -289,18 +310,28 @@ class BookingController extends Controller
         $branchId = auth()->user()->employee->branch_id;
 
         $booking = Booking::with([
+
             'client',
+
             'trip.bus',
+
             'currency',
+
             'invoice.payments'
+
         ])
+
             ->where('branch_id', $branchId)
+
             ->findOrFail($id);
 
 
         return view(
+
             'frontend.bookings.show',
+
             compact('booking')
+
         );
 
     }

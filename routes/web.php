@@ -229,43 +229,32 @@ Route::middleware(['auth'])
 
 use App\Http\Controllers\Frontend\BookingController;
 
-Route::middleware(['auth'])
-    ->prefix('frontend')
-    ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | BOOKINGS
-        |--------------------------------------------------------------------------
-        */
+/*
+|--------------------------------------------------------------------------
+| Bookings Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
 
-        Route::get('/bookings', [BookingController::class, 'index'])
-            ->name('bookings.index');
+    Route::prefix('bookings')->name('bookings.')->group(function () {
 
-        Route::post('/bookings', [BookingController::class, 'store'])
-            ->name('bookings.store');
+        Route::get('/', [BookingController::class, 'index'])->name('index');
 
+        Route::post('/', [BookingController::class, 'store'])->name('store');
 
+        Route::get('/{id}', [BookingController::class, 'show'])->name('show');
 
-        /*
-        |--------------------------------------------------------------------------
-        | SEARCH CLIENT
-        |--------------------------------------------------------------------------
-        */
+        Route::get('/search-client', [BookingController::class, 'searchClient'])->name('searchClient');
 
-        Route::get('/clients/search', [BookingController::class, 'searchClient'])
-            ->name('clients.search');
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | GET TRIP INFO (for booking form)
-        |--------------------------------------------------------------------------
-        */
-
+        Route::get('/trip/{id}', [BookingController::class, 'getTrip'])->name('trip');
 
     });
+
+});
+
+
+
 //end safwan
 
 

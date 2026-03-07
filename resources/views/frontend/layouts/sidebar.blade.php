@@ -125,13 +125,6 @@
         </a>
 
 
-
-
-    </div>
-
-</div>
-
-
         <a href="{{ route('bookings.index') }}"
            class="block px-3 py-2 rounded-xl text-sm transition
    {{ request()->routeIs('bookings.*')
@@ -139,8 +132,13 @@
         : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
    }}">
 
-            الحجوزات
+        الحجوزات
         </a>
+
+
+    </div>
+
+</div>
 
         <!-- PASSPORTS -->
         <div>
