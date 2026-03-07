@@ -53,7 +53,10 @@ class Booking extends Model
         return $this->belongsTo(Employee::class,'created_by');
     }
 
-
+    public function invoice()
+    {
+        return $this->belongsTo(Employee::class,'created_by');
+    }
 
     public function branch()
     {

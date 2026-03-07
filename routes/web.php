@@ -237,19 +237,36 @@ use App\Http\Controllers\Frontend\BookingController;
 */
 Route::middleware(['auth'])->group(function () {
 
-    Route::prefix('bookings')->name('bookings.')->group(function () {
 
-        Route::get('/', [BookingController::class, 'index'])->name('index');
+    Route::prefix('bookings')
+        ->name('bookings.')
+        ->group(function () {
 
-        Route::post('/', [BookingController::class, 'store'])->name('store');
+            // عرض الحجوزات
+            Route::get('/', [BookingController::class, 'index'])
+                ->name('index');
 
-        Route::get('/{id}', [BookingController::class, 'show'])->name('show');
+            // حفظ حجز جديد
+            Route::post('/store', [BookingController::class, 'store'])
+                ->name('store');
 
-        Route::get('/search-client', [BookingController::class, 'searchClient'])->name('searchClient');
+            // عرض حجز
+            Route::get('/{booking}', [BookingController::class, 'show'])
+                ->name('show');
 
-        Route::get('/trip/{id}', [BookingController::class, 'getTrip'])->name('trip');
+            // صفحة التعديل
+            Route::get('/{booking}/edit', [BookingController::class, 'edit'])
+                ->name('edit');
 
-    });
+            // تحديث الحجز
+            Route::put('/{booking}', [BookingController::class, 'update'])
+                ->name('update');
+
+            // حذف الحجز
+            Route::delete('/{booking}', [BookingController::class, 'destroy'])
+                ->name('destroy');
+
+        });
 
 });
 
