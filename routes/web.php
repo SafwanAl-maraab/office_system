@@ -150,6 +150,83 @@ Route::middleware(['auth'])
 
     });
 
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->name('dashboard.')
+    ->group(function () {
+
+        /*
+        |--------------------------------
+        | إدارة الخزنة
+        |--------------------------------
+        */
+
+        Route::prefix('cashboxes')
+            ->name('cashboxes.')
+            ->group(function () {
+
+                // عرض الخزائن + البحث
+                Route::get(
+                    '/',
+                    [\App\Http\Controllers\Frontend\CashboxController::class, 'index']
+                )->name('index');
+
+                // إنشاء عملة جديدة
+                Route::post(
+                    '/store',
+                    [\App\Http\Controllers\Frontend\CashboxController::class, 'store']
+                )->name('store');
+
+                // تعديل العملة
+                Route::put(
+                    '/update/{id}',
+                    [\App\Http\Controllers\Frontend\CashboxController::class, 'update']
+                )->name('update');
+
+            });
+
+    });
+
+
+use App\Http\Controllers\Frontend\TripController;
+
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRIPS
+        |--------------------------------------------------------------------------
+        */
+
+        // عرض صفحة الرحلات
+        Route::get('/trips', [TripController::class, 'index'])
+            ->name('trips.index');
+
+
+        // إنشاء رحلة
+        Route::post('/trips', [TripController::class, 'store'])
+            ->name('trips.store');
+
+
+        // تعديل رحلة
+        Route::put('/trips/{trip}', [TripController::class, 'update'])
+            ->name('trips.update');
+
+
+        // حذف رحلة
+        Route::delete('/trips/{trip}', [TripController::class, 'destroy'])
+            ->name('trips.destroy');
+
+
+        // جلب بيانات الرحلة للحجز
+        Route::get('/trips/{trip}/info', [TripController::class, 'info'])
+            ->name('trips.info');
+
+    });
+////
+
 use App\Http\Controllers\Frontend\BookingController;
 
 Route::middleware(['auth'])
@@ -187,8 +264,6 @@ Route::middleware(['auth'])
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/trips/{trip}', [BookingController::class, 'getTrip'])
-            ->name('trips.info');
 
     });
 //end safwan
