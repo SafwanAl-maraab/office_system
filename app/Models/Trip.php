@@ -58,5 +58,9 @@ class Trip extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+    public function invoices()
+    {
+        return $this->hasManyThrough(Invoice::class, Booking::class);
+    }
 
 }

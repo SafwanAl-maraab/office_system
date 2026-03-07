@@ -55,4 +55,12 @@ class Employee extends Model
 {
     return $this->hasMany(VisaStatusHistory::class, 'changed_by');
 }
+
+
+// app/Models/Employee.php
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

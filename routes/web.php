@@ -235,10 +235,6 @@ Route::middleware(['auth'])
         Route::get('/trips/{trip}', [BookingController::class, 'getTrip'])
             ->name('trips.info');
 
-
-        Route::get('/bookings/{booking}', [BookingController::class, 'show'])
-            ->name('bookings.show');
-
     });
 //end safwan
 

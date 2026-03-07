@@ -36,4 +36,11 @@ class Client extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    // app/Models/Client.php
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

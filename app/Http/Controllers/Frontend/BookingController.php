@@ -27,70 +27,32 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
-        $branchId = auth()->user()->employee->branch_id;
-
         $search = $request->search;
 
+        $bookings = Booking::with([
+            'client',
+            'trip.bus',
+            'currency'
+        ])
 
+            ->when($search, function ($query) use ($search) {
 
-
-        $trips = Trip::with('bus')
-            ->where('branch_id', $branchId)
-            ->latest()
-            ->get();
-
-
-
-        $currencies = Currency::all();
-
-        $bookings = Booking::with(['client','trip.bus','currency'])
-
-            ->when($search,function($q) use($search){
-
-                $q->whereHas('client',function($qq) use($search){
-
-                    $qq->where('full_name','like',"%$search%");
-
+                $query->whereHas('client', function ($q) use ($search) {
+                    $q->where('full_name', 'LIKE', "%{$search}%");
                 });
 
             })
 
-            ->when(request('status'),function($q){
-
-                $q->where('status',request('status'));
-
-            })
-
             ->latest()
+            ->paginate(12)
+            ->withQueryString();
 
-            ->paginate(12);
 
-        $stats = [
-
-            'total' => Booking::count(),
-
-            'confirmed' => Booking::where('status','confirmed')->count(),
-
-            'pending' => Booking::where('status','pending')->count(),
-
-            'cancelled' => Booking::where('status','cancelled')->count(),
-
-          //  'today' => Booking::whereDate('created_at', Carbon::today())->count()
-
-        ];
-        return view(
-            'frontend.bookings.index',
-            compact(
-                'bookings',
-                'trips',
-                'currencies',
-                'search',
-                'stats'
-            )
-        );
+        return view('frontend.bookings.index', compact(
+            'bookings',
+            'search'
+        ));
     }
-
-
 
     /*
     |--------------------------------------------------------------------------

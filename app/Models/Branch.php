@@ -65,4 +65,16 @@ class Branch extends Model
     {
         return $this->hasMany(Agent::class);
     }
+
+    // app/Models/Branch.php
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
 }

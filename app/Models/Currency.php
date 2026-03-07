@@ -26,4 +26,12 @@ class Currency extends Model
         return $this->hasMany(Invoice::class);
     }
 
+
+    // app/Models/Currency.php
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
 }
