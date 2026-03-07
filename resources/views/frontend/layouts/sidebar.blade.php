@@ -46,7 +46,7 @@
         </a>
 
         <!-- VISAS MENU -->
-      
+
         <!-- VISAS MENU -->
 @php
     $visasActive = request()->routeIs('visas.*') || request()->routeIs('trip-groups.*');
@@ -111,6 +111,30 @@
     أنواع التأشيرات
 
 </a>
+
+
+        <a href="{{ route('trips.index') }}"
+           class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('trips.*')
+        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+   }}">
+
+        الرحللات الخارجية
+
+        </a>
+
+
+        <a href="{{ route('bookings.index') }}"
+           class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('bookings.*')
+        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+   }}">
+
+        الحجوزات
+        </a>
+
 
     </div>
 
@@ -210,7 +234,8 @@
         @php
             $financeActive = request()->routeIs('dashboard.invoices.*')
                             || request()->routeIs('dashboard.payments.*')
-                            || request()->routeIs('dashboard.expenses.*');
+                            || request()->routeIs('dashboard.expenses.*')
+               || request()->routeIs('dashboard.cashboxes.*');
         @endphp
 
         <div>
@@ -261,6 +286,19 @@
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                     المصاريف
                 </a>
+
+
+                {{-- إدارة الخزنة --}}
+                <a href="{{ route('dashboard.cashboxes.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('dashboard.cashboxes.*')
+        ? 'bg-blue-600 text-white'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+                    إدارة الخزنة
+
+                </a>
+
 
             </div>
 

@@ -119,6 +119,25 @@
                     السعر غير مطابق
                 </p>
             </div>
+            <div>
+                <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">
+                    التكلفة على المكتب
+                </label>
+
+                <div class="flex gap-2 items-center">
+                    <input type="number"
+                           min="0"
+                           name="cost_price"
+                           id="priceField"
+
+                           class="w-full px-3 py-2 rounded-lg border
+                                  border-gray-300 dark:border-gray-600
+                                  bg-gray-100 dark:bg-gray-700
+                                  text-gray-700 dark:text-gray-200">
+
+
+                </div>
+            </div>
 
             <!-- ملاحظات -->
             <div>

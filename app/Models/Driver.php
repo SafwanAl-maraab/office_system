@@ -34,4 +34,7 @@ class Driver extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+
+
 }

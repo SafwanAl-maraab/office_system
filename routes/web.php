@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Frontend\CashboxController;
 use App\Http\Controllers\Frontend\ExpenseController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,27 @@ Route::middleware(['auth'])
         Route::resource('expenses', ExpenseController::class)
             ->only(['index','store']);
 
+        //
+        //الخزنات
+
+
+        Route::prefix('cashboxes')
+            ->name('cashboxes.')
+            ->group(function () {
+
+                Route::get('/', [CashboxController::class, 'index'])
+                    ->name('index');
+
+                Route::post('/store', [CashboxController::class, 'store'])
+                    ->name('store');
+
+                Route::put('/update/{id}', [CashboxController::class, 'update'])
+                    ->name('update');
+
+            });
+
+
+        //الطلبات
 
         Route::prefix('requests')
             ->name('requests.')
@@ -149,8 +171,75 @@ Route::middleware(['auth'])
             });
 
     });
+//الرحلات الخارجية
+
+use App\Http\Controllers\Frontend\TripController;
+
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+
+        Route::get('/trips', [TripController::class,'index'])
+            ->name('trips.index');
+
+        Route::post('/trips', [TripController::class,'store'])
+            ->name('trips.store');
+
+        Route::put('/trips/{trip}', [TripController::class,'update'])
+            ->name('trips.update');
+
+        Route::delete('/trips/{trip}', [TripController::class,'destroy'])
+            ->name('trips.destroy');
+
+    });
+//الحجوزات
 
 
+use App\Http\Controllers\Frontend\BookingController;
+
+Route::middleware(['auth'])
+    ->prefix('frontend')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOOKINGS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/bookings', [BookingController::class, 'index'])
+            ->name('bookings.index');
+
+        Route::post('/bookings', [BookingController::class, 'store'])
+            ->name('bookings.store');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEARCH CLIENT
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/clients/search', [BookingController::class, 'searchClient'])
+            ->name('clients.search');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET TRIP INFO (for booking form)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/trips/{trip}', [BookingController::class, 'getTrip'])
+            ->name('trips.info');
+
+
+        Route::get('/bookings/{booking}', [BookingController::class, 'show'])
+            ->name('bookings.show');
+
+    });
 //end safwan
 
 
@@ -173,7 +262,7 @@ require __DIR__.'/auth.php';
 
 
 
-    
+
 Route::middleware(['auth'])
     ->prefix('dashboard')
     ->group(function () {
@@ -221,7 +310,7 @@ Route::middleware(['auth'])
         Route::post('/visas/{id}/attach-package', [VisaController::class,'attachPackage'])
             ->name('visas.attachPackage');
 
-    
+
     Route::post('/visas/{id}/add-payment', [VisaController::class,'storePayment'])
     ->name('visas.addPayment');
 
@@ -241,7 +330,7 @@ Route::get('/trip-groups/{id}/seats',
     [VisaController::class,'getAvailableSeats'])
     ->name('trip-groups.seats');
 
-       
+
     });
 
 
@@ -266,7 +355,7 @@ Route::get('/clients/search',[ClientController::class,'search']);
 Route::post('/visas', [VisaController::class,'store'])->name('visas.store');
     });
 
-  
+
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -281,6 +370,12 @@ Route::middleware(['auth'])
         Route::post('/trip-groups/attach-bus', [TripGroupController::class,'attachBus'])
             ->name('trip-groups.attachBus');
 
+<<<<<<< HEAD
          
            
     });
+=======
+
+
+    });
+>>>>>>> 19812519cab3aa1b96e5c4f5bcf250951429642b

@@ -34,4 +34,6 @@ class Bus extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+
 }

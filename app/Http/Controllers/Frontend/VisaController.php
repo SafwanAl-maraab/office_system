@@ -43,7 +43,7 @@ class VisaController extends Controller
         $visas = $query->latest()->paginate(12);
 
         $visaTypes = VisaType::where('status',1)->get();
- 
+
         return view('frontend.visas.index', compact('visas','visaTypes'));
     }
 
@@ -126,6 +126,7 @@ class VisaController extends Controller
             'total_amount' => $request->sale_price,
             'paid_amount' => 0,
             'remaining_amount' => $request->sale_price,
+           'cost' => $request->cost_price,
             'currency_id' => $request->currency_id,
             'status' => 'unpaid',
             'is_refund' => false
@@ -349,7 +350,7 @@ class VisaController extends Controller
     |--------------------------------------------------------------------------
     */public function searchClients(Request $request)
 {
- 
+
     $search = $request->q;
 
     $clients = \App\Models\Client::where('full_name','like','%'.$search.'%')

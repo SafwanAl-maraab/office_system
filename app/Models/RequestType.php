@@ -10,6 +10,7 @@ protected $fillable = [
 'name',
 'service_category',
 'price',
+
 'currency_id',
 'status',
 ];

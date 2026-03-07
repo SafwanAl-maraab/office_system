@@ -15,6 +15,7 @@ class Invoice extends Model
         'total_amount',
         'paid_amount',
         'remaining_amount',
+        'cost',
         'currency_id',
         'status',
         'is_refund',
@@ -43,5 +44,11 @@ class Invoice extends Model
     public function refundInvoices()
     {
         return $this->hasMany(Invoice::class,'reversed_invoice_id');
+    }
+
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class,'reference_id')
+            ->where('reference_type','booking');
     }
 }
