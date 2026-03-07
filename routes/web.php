@@ -227,20 +227,7 @@ Route::middleware(['auth'])
     });
 ////
 
-<<<<<<< HEAD
-use App\Http\Controllers\Frontend\BookingController;
 
-=======
-Route::middleware(['auth'])
-    ->prefix('frontend')
-    ->group(function () {
->>>>>>> 576b64b81cfc27e29a936e8cf6f17d69c62800ee
-
-/*
-|--------------------------------------------------------------------------
-| Bookings Routes
-|--------------------------------------------------------------------------
-*/
 Route::middleware(['auth'])->group(function () {
 
 
