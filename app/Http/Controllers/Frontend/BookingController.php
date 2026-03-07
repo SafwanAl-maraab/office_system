@@ -31,8 +31,8 @@ class BookingController extends Controller
 
         $bookings = Booking::with([
             'client',
-
-
+            'trip.bus',
+            'currency'
         ])
 
             ->when($search, function ($query) use ($search) {

@@ -7,7 +7,7 @@ use App\Http\Controllers\Frontend\ClientController;
 use App\Http\Controllers\Frontend\SettingsController;
 use App\Http\Controllers\Frontend\VisaController;
 use App\Http\Controllers\Frontend\TripGroupController;
-
+use App\Http\Controllers\Frontend\BookingController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -226,12 +226,6 @@ Route::middleware(['auth'])
 
     });
 ////
-
-<<<<<<< HEAD
-
-=======
-use App\Http\Controllers\Frontend\BookingController;
->>>>>>> 7f4a42ebcb7910b55a1a213100faf4df24b24d58
 
 Route::middleware(['auth'])
     ->prefix('frontend')
