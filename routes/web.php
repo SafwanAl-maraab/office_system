@@ -151,8 +151,7 @@ Route::middleware(['auth'])
     });
 
 
-<<<<<<< HEAD
-use App\Http\Controllers\Frontend\BookingController;
+
 
 Route::middleware(['auth'])
     ->prefix('frontend')
@@ -193,8 +192,6 @@ Route::middleware(['auth'])
             ->name('trips.info');
 
     });
-=======
->>>>>>> 9c4fd72e744eb5e112e1cde538135839b8ca85b4
 //end safwan
 
 
