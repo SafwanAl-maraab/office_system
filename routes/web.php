@@ -198,6 +198,7 @@ Route::middleware(['auth'])
 //end safwan
 
 
+
 //
 //Route::get('/dashboard', function () {
 //    return view('frontend.dashboard');
