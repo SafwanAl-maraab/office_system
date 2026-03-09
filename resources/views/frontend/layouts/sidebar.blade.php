@@ -125,7 +125,7 @@
         </a>
 
 
-        <a href="{{ route('bookings.index') }}"
+        <a href="{{ route('dashboard.bookings.index') }}"
            class="block px-3 py-2 rounded-xl text-sm transition
    {{ request()->routeIs('bookings.*')
         ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
@@ -209,27 +209,27 @@
     $bookingsActive = request()->routeIs('bookings.*');
 @endphp
 
-<a href="{{ route('bookings.index') }}"
-   class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
-   {{ $bookingsActive
-        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'
-        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-   }}">
+{{--<a href="{{ route('bookings.index') }}"--}}
+{{--   class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200--}}
+{{--   {{ $bookingsActive--}}
+{{--        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'--}}
+{{--        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'--}}
+{{--   }}">--}}
 
-    <!-- Active Indicator -->
-    @if($bookingsActive)
-        <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>
-    @endif
+{{--    <!-- Active Indicator -->--}}
+{{--    @if($bookingsActive)--}}
+{{--        <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>--}}
+{{--    @endif--}}
 
-    <!-- Icon -->
-    <span class="text-lg">🎟</span>
+{{--    <!-- Icon -->--}}
+{{--    <span class="text-lg">🎟</span>--}}
 
-    <!-- Title -->
-    <span class="text-sm font-medium">
-        الحجوزات
-    </span>
+{{--    <!-- Title -->--}}
+{{--    <span class="text-sm font-medium">--}}
+{{--        الحجوزات--}}
+{{--    </span>--}}
 
-</a>
+{{--</a>--}}
         <!-- FINANCE -->
         @php
             $financeActive = request()->routeIs('dashboard.invoices.*')
