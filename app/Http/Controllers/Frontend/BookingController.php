@@ -134,8 +134,11 @@ class BookingController extends Controller
                 'purchase_price' => $trip->purchase_price,
 
                 'sale_price' => $salePrice,
-
+                'currency_id' => $trip->currency_id,
                 'discount_percent' => $discountPercent,
+
+
+                'created_by' => auth()->user()->employee->id,
 
             ]);
 
@@ -243,7 +246,7 @@ class BookingController extends Controller
 
 
             return redirect()
-                ->route('bookings.index')
+                ->route('dashboard.bookings.index')
                 ->with('success','تم إنشاء الحجز بنجاح');
 
 
@@ -251,21 +254,26 @@ class BookingController extends Controller
 
             DB::rollBack();
 
-            return back()->with('error','حدث خطأ أثناء إنشاء الحجز',$e);
+            return back()->with('error','حدث خطأ أثناء إنشاء الحجز: '.$e->getMessage());
 
         }
 
     }
     public function tripSeats($tripId)
     {
+        $trip = Trip::with('bus')->findOrFail($tripId);
 
-        $seats = Booking::where('trip_id',$tripId)
+        $bookedSeats = Booking::where('trip_id',$tripId)
             ->pluck('seat_number');
 
-        return response()->json($seats);
+        return response()->json([
 
+            'totalSeats' => $trip->bus->seats,
+
+            'bookedSeats' => $bookedSeats
+
+        ]);
     }
-
     /*
     |--------------------------------------------------------------------------
     | عرض تفاصيل الحجز

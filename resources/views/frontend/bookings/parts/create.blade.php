@@ -261,14 +261,18 @@
                     </div>
 
                     <!-- seat -->
-                    <div>
-                        <label class="text-sm text-gray-500">رقم المقعد</label>
+                    <div class="sm:col-span-2">
 
-                        <input
-                            type="number"
-                            name="seat_number"
-                            class="w-full border rounded-xl px-4 py-2"
-                        >
+                        <label class="text-sm text-gray-500 mb-2 block">
+                            اختر المقعد
+                        </label>
+
+                        <input type="hidden" name="seat_number" id="seatNumber">
+
+                        <div id="seatsContainer"
+                             class="grid grid-cols-5 gap-2 mt-2">
+                        </div>
+
                     </div>
 
                     <!-- discount -->
@@ -413,5 +417,77 @@
         }
 
     })
+
+</script>
+
+<script>
+
+    const tripSelect = document.getElementById("tripSelect");
+    const seatsContainer = document.getElementById("seatsContainer");
+    const seatInput = document.getElementById("seatNumber");
+
+    tripSelect.addEventListener("change", function(){
+
+        const tripId = this.value;
+
+        seatsContainer.innerHTML = "";
+
+        if(!tripId) return;
+
+        fetch(`/dashboard/trips/${tripId}/seats`)
+            .then(res => res.json())
+            .then(data => {
+
+                const total = data.totalSeats;
+
+                const booked = data.bookedSeats;
+
+                for(let i=1;i<=total;i++){
+
+                    const seat = document.createElement("button");
+
+                    seat.type = "button";
+
+                    seat.innerText = i;
+
+                    seat.className = "p-2 rounded-lg text-sm border";
+
+                    if(booked.includes(i)){
+
+                        seat.classList.add(
+                            "bg-red-200",
+                            "text-red-700",
+                            "cursor-not-allowed"
+                        );
+
+                        seat.disabled = true;
+
+                    }else{
+
+                        seat.classList.add(
+                            "bg-green-100",
+                            "hover:bg-green-200"
+                        );
+
+                        seat.onclick = () => {
+
+                            document.querySelectorAll("#seatsContainer button")
+                                .forEach(btn => btn.classList.remove("ring-2","ring-blue-500"));
+
+                            seat.classList.add("ring-2","ring-blue-500");
+
+                            seatInput.value = i;
+
+                        };
+
+                    }
+
+                    seatsContainer.appendChild(seat);
+
+                }
+
+            });
+
+    });
 
 </script>

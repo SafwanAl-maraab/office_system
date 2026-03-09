@@ -205,6 +205,12 @@ Route::middleware(['auth'])
         Route::post('/bookings/{booking}/payment', [BookingController::class,'payment'])
             ->name('bookings.payment');
 
+
+        Route::get(
+            '/trips/{trip}/seats',
+            [BookingController::class,'tripSeats']
+        )->name('trips.seats');
+
 /////
         /*
         |--------------------------------
