@@ -506,6 +506,6 @@ function openPaymentModal(){
 
 @include('frontend.visas.partials.change_state')
 
-@include('frontend.visas.partials.trip_group')
+
 
 @endsection

@@ -328,12 +328,31 @@
         العملاء
     </span>
         </a>
+@php
+$agentsActive = request()->routeIs('agents.*');
+@endphp
 
-        <!-- الوكلاء -->
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            <span>👥</span>
-            <span x-show="!collapsed" class="text-sm">الوكلاء</span>
-        </a>
+<a href="{{ route('agents.index') }}"
+   class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+   {{ $agentsActive
+        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+   }}">
+
+    <!-- Active Indicator -->
+    @if($agentsActive)
+        <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>
+    @endif
+
+    <!-- Icon -->
+    <span class="text-lg">🏢</span>
+
+    <!-- Title -->
+    <span x-show="!collapsed" class="text-sm font-medium">
+        الوكلاء
+    </span>
+
+</a>
 
         <!-- EMPLOYEES -->
         @php

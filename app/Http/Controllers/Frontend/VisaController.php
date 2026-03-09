@@ -184,17 +184,18 @@ class VisaController extends Controller
         | تسجيل دين الوكيل مباشرة
         |--------------------------------------------------------------------------
         */
-        if ($request->agent_id && $request->agent_cost) {
+       if ($request->agent_id && $request->agent_cost) {
 
-            AgentTransaction::create([
-                'agent_id' => $request->agent_id,
-                'branch_id' => $branchId,
-                'visa_id' => $visa->id,
-                'type' => 'debit',
-                'amount' => $request->agent_cost,
-                'currency_id' => $request->currency_id
-            ]);
-        }
+    AgentTransaction::create([
+        'agent_id' => $request->agent_id,
+        'branch_id' => $branchId,
+        'visa_id' => $visa->id,
+        'type' => 'visa_cost',
+        'amount' => $request->agent_cost,
+        'currency_id' => $request->currency_id
+    ]);
+
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -317,8 +318,8 @@ class VisaController extends Controller
     $remaining = $invoice ? $invoice->remaining_amount : 0;
     $isPaid    = $invoice ? $invoice->status === 'paid' : false;
 
-    $agentDebt = $visa->agentTransactions
-        ->where('type','debit')
+$agentDebt = $visa->agentTransactions
+        ->where('type','visa_cost')
         ->sum('amount');
 
     return view('frontend.visas.show', compact(
@@ -474,6 +475,18 @@ public function changeStatus(Request $request, $id)
         if ($request->status === 'cancelled') {
             $visa->cancel_reason = $request->cancel_reason;
         }
+        if ($request->status === 'cancelled' && $visa->agent_id && $visa->agent_cost) {
+
+    AgentTransaction::create([
+        'agent_id' => $visa->agent_id,
+        'branch_id' => $visa->branch_id,
+        'visa_id' => $visa->id,
+        'type' => 'adjustment',
+        'amount' => -$visa->agent_cost,
+        'currency_id' => $visa->currency_id
+    ]);
+
+}
 
         $visa->save();
 

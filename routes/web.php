@@ -399,3 +399,26 @@ Route::middleware(['auth'])
 
 
     });
+// الوكلاء محمد المعرب 
+use App\Http\Controllers\Frontend\AgentController;
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        Route::get('/agents', [AgentController::class,'index'])
+            ->name('agents.index');
+
+        Route::post('/agents', [AgentController::class,'store'])
+            ->name('agents.store');
+
+        Route::get('/agents/{id}', [AgentController::class,'show'])
+            ->name('agents.show');
+
+        Route::delete('/agents/{id}', [AgentController::class,'destroy'])
+            ->name('agents.destroy');
+
+        Route::post('/agents/{id}/payment', [AgentController::class,'storePayment'])
+            ->name('agents.payment');
+
+    });
