@@ -268,7 +268,7 @@ class BookingController extends Controller
 
         return response()->json([
 
-            'totalSeats' => $trip->bus->seats,
+            'totalSeats' => $trip->bus->capacity,
 
             'bookedSeats' => $bookedSeats
 
