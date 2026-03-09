@@ -454,10 +454,31 @@ Route::middleware(['auth'])
         Route::get('/agents/{id}', [AgentController::class,'show'])
             ->name('agents.show');
 
+        Route::put('/agents/{id}', [AgentController::class,'update'])
+            ->name('agents.update');
+
         Route::delete('/agents/{id}', [AgentController::class,'destroy'])
             ->name('agents.destroy');
 
+        // دفع للوكيل
         Route::post('/agents/{id}/payment', [AgentController::class,'storePayment'])
-            ->name('agents.payment');
+            ->name('agents.pay');
 
+        // طباعة كشف حساب وكيل
+        Route::get('/agents/{id}/statement-pdf', [AgentController::class,'statementPDF'])
+            ->name('agents.statement.pdf');
+
+        // طباعة كشف حساب جميع الوكلاء
+        Route::get('/agents-statement-all', [AgentController::class,'statementAll'])
+            ->name('agents.statement.all');
+Route::get('/agents-export',
+    [AgentController::class,'statementAll'])
+    ->name('agents.export');
+    Route::get('/agents/{id}/statement-pdf',
+    [AgentController::class,'statementPDF'])
+    ->name('agents.statement.pdf');
+
+Route::get('/agents-statement-all',
+    [AgentController::class,'statementAll'])
+    ->name('agents.statement.all');
     });

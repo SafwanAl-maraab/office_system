@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Agent;
 use App\Models\AgentPayment;
 use App\Models\AgentTransaction;
 use App\Models\BranchCashbox;
 use App\Models\Currency;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AgentController extends Controller
 {
@@ -27,13 +29,16 @@ $query = Agent::query();
 
 if($request->search){
 
-$query->where('name','like','%'.$request->search.'%')
-      ->orWhere('phone','like','%'.$request->search.'%');
+$query->where(function($q) use ($request){
+
+$q->where('name','like','%'.$request->search.'%')
+  ->orWhere('phone','like','%'.$request->search.'%');
+
+});
 
 }
 
 $agents = $query->latest()->paginate(20);
-
 
 /*
 |-----------------------------------
@@ -49,13 +54,21 @@ $totalPayments = AgentTransaction::where('type','payment')->sum('amount');
 
 $currentBalance = AgentTransaction::sum('amount');
 
+/*
+|-----------------------------------
+| العملات
+|-----------------------------------
+*/
+
+$currencies = Currency::where('status',1)->get();
 
 return view('frontend.agents.index',compact(
 'agents',
 'totalAgents',
 'totalDue',
 'totalPayments',
-'currentBalance'
+'currentBalance',
+'currencies'
 ));
 
 }
@@ -101,36 +114,27 @@ public function show($id)
 
 $agent = Agent::findOrFail($id);
 
-
-/*
-|-----------------------------------
-| كشف الحساب
-|-----------------------------------
-*/
-
-$transactions = AgentTransaction::with(['currency','visa'])
+$transactions = AgentTransaction::with([
+'currency:id,code,symbol',
+'visa:id,visa_number'
+])
 ->where('agent_id',$agent->id)
 ->latest()
 ->paginate(30);
 
+$runningBalance = 0;
 
-/*
-|-----------------------------------
-| الرصيد
-|-----------------------------------
-*/
+foreach ($transactions as $transaction) {
+
+$runningBalance += $transaction->amount;
+
+$transaction->balance_after = $runningBalance;
+
+}
 
 $balance = AgentTransaction::where('agent_id',$agent->id)->sum('amount');
 
-
-/*
-|-----------------------------------
-| العملات
-|-----------------------------------
-*/
-
 $currencies = Currency::where('status',1)->get();
-
 
 return view('frontend.agents.show',compact(
 
@@ -160,16 +164,13 @@ $request->validate([
 
 ]);
 
+DB::beginTransaction();
+
+try{
+
 $agent = Agent::findOrFail($id);
 
 $branchId = auth()->user()->employee->branch_id;
-
-
-/*
-|-----------------------------------
-| التحقق من الخزنة قبل أي عملية
-|-----------------------------------
-*/
 
 $cashbox = BranchCashbox::where('branch_id',$branchId)
     ->where('currency_id',$request->currency_id)
@@ -177,22 +178,15 @@ $cashbox = BranchCashbox::where('branch_id',$branchId)
 
 if(!$cashbox){
 
-return back()->with('error','لا توجد خزنة لهذه العملة');
+throw new \Exception('لا توجد خزنة لهذه العملة');
 
 }
 
 if($cashbox->balance < $request->amount){
 
-return back()->with('error','رصيد الخزنة غير كافي لإتمام الدفع');
+throw new \Exception('رصيد الخزنة غير كافي لإتمام الدفع');
 
 }
-
-
-/*
-|-----------------------------------
-| إنشاء سجل الدفع
-|-----------------------------------
-*/
 
 $payment = AgentPayment::create([
 
@@ -203,13 +197,6 @@ $payment = AgentPayment::create([
 'description'=>$request->description
 
 ]);
-
-
-/*
-|-----------------------------------
-| تسجيل العملية المالية
-|-----------------------------------
-*/
 
 AgentTransaction::create([
 
@@ -222,17 +209,19 @@ AgentTransaction::create([
 
 ]);
 
-
-/*
-|-----------------------------------
-| تحديث الخزنة
-|-----------------------------------
-*/
-
 $cashbox->decrement('balance',$request->amount);
 
+DB::commit();
 
 return back()->with('success','تم تسجيل الدفع للوكيل');
+
+}catch(\Exception $e){
+
+DB::rollBack();
+
+return back()->with('error',$e->getMessage());
+
+}
 
 }
 
@@ -248,13 +237,6 @@ public function destroy($id)
 
 $agent = Agent::findOrFail($id);
 
-
-/*
-|-----------------------------------
-| منع الحذف إذا لديه معاملات
-|-----------------------------------
-*/
-
 if($agent->transactions()->count() > 0){
 
 return back()->with('error','لا يمكن حذف الوكيل لوجود معاملات مرتبطة به');
@@ -267,4 +249,139 @@ return back()->with('success','تم حذف الوكيل');
 
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| تحديث وكيل
+|--------------------------------------------------------------------------
+*/
+
+public function update(Request $request,$id)
+{
+
+$agent = Agent::findOrFail($id);
+
+$agent->update([
+
+'name'=>$request->name,
+'phone'=>$request->phone,
+'country'=>$request->country,
+'city'=>$request->city
+
+]);
+
+return back()->with('success','تم تحديث الوكيل');
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| طباعة كشف حساب وكيل PDF
+|--------------------------------------------------------------------------
+*/
+
+public function statementPDF($id)
+{
+
+$agent = Agent::findOrFail($id);
+
+$transactions = AgentTransaction::with(['currency','visa'])
+->where('agent_id',$agent->id)
+->orderBy('created_at')
+->get();
+
+$balance = 0;
+
+foreach($transactions as $t){
+
+$balance += $t->amount;
+
+$t->balance_after = $balance;
+
+}
+
+$pdf = Pdf::loadView(
+'frontend.agents.pdf.statement',
+compact('agent','transactions','balance')
+)
+->setPaper('a4')
+->setOption('defaultFont','DejaVu Sans');
+
+return $pdf->download('agent-statement-'.$agent->id.'.pdf');
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| طباعة كشف حساب جميع الوكلاء
+|--------------------------------------------------------------------------
+*/
+
+public function statementAll(Request $request)
+{
+
+$query = Agent::query();
+
+/*
+|-----------------------------------
+| فلترة بالبحث
+|-----------------------------------
+*/
+
+if($request->search){
+
+$query->where(function($q) use ($request){
+
+$q->where('name','like','%'.$request->search.'%')
+  ->orWhere('phone','like','%'.$request->search.'%');
+
+});
+
+}
+
+/*
+|-----------------------------------
+| فلترة بالتاريخ
+|-----------------------------------
+*/
+
+if($request->from_date){
+
+$query->whereHas('transactions',function($q) use ($request){
+
+$q->whereDate('created_at','>=',$request->from_date);
+
+});
+
+}
+
+if($request->to_date){
+
+$query->whereHas('transactions',function($q) use ($request){
+
+$q->whereDate('created_at','<=',$request->to_date);
+
+});
+
+}
+
+$agents = $query->with('transactions.currency')->get();
+
+/*
+|-----------------------------------
+| إنشاء PDF
+|-----------------------------------
+*/
+$pdf = Pdf::loadView(
+'frontend.agents.pdf.all',
+compact('agents')
+)
+->setPaper('A4')
+->setOption('defaultFont','DejaVu Sans');
+
+return $pdf->download('agents-statement.pdf');
+
+}
 }
