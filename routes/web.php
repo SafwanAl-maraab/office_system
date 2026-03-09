@@ -8,6 +8,7 @@ use App\Http\Controllers\Frontend\SettingsController;
 use App\Http\Controllers\Frontend\VisaController;
 use App\Http\Controllers\Frontend\TripGroupController;
 use App\Http\Controllers\Frontend\BookingController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -150,17 +151,66 @@ Route::middleware(['auth'])
 
     });
 
+
 Route::middleware(['auth'])
     ->prefix('dashboard')
     ->name('dashboard.')
     ->group(function () {
+//bookings
 
+        Route::get('/bookings', [BookingController::class,'index'])
+            ->name('bookings.index');
+
+
+        Route::post('/bookings', [BookingController::class,'store'])
+            ->name('bookings.store');
+
+
+        /*
+        ==========================
+        تحديث حجز
+        ==========================
+        */
+
+        Route::put('/bookings/{booking}', [BookingController::class,'update'])
+            ->name('bookings.update');
+
+
+        /*
+        ==========================
+        حذف حجز
+        ==========================
+        */
+
+        Route::delete('/bookings/{booking}', [BookingController::class,'destroy'])
+            ->name('bookings.destroy');
+
+
+        /*
+        ==========================
+        عرض الفاتورة
+        ==========================
+        */
+
+        Route::get('/bookings/{booking}/invoice', [BookingController::class,'invoice'])
+            ->name('bookings.invoice');
+
+
+        /*
+        ==========================
+        تسجيل دفعة
+        ==========================
+        */
+
+        Route::post('/bookings/{booking}/payment', [BookingController::class,'payment'])
+            ->name('bookings.payment');
+
+/////
         /*
         |--------------------------------
         | إدارة الخزنة
         |--------------------------------
         */
-
         Route::prefix('cashboxes')
             ->name('cashboxes.')
             ->group(function () {
@@ -228,41 +278,24 @@ Route::middleware(['auth'])
 ////
 
 
-Route::middleware(['auth'])->group(function () {
 
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
 
-    Route::prefix('bookings')
-        ->name('bookings.')
-        ->group(function () {
+        /*
+        ==========================
+        عرض الحجوزات
+        ==========================
+        */
 
-            // عرض الحجوزات
-            Route::get('/', [BookingController::class, 'index'])
-                ->name('index');
+        /*
+        ==========================
+        إنشاء حجز
+        ==========================
+        */
 
-            // حفظ حجز جديد
-            Route::post('/store', [BookingController::class, 'store'])
-                ->name('store');
-
-            // عرض حجز
-            Route::get('/{booking}', [BookingController::class, 'show'])
-                ->name('show');
-
-            // صفحة التعديل
-            Route::get('/{booking}/edit', [BookingController::class, 'edit'])
-                ->name('edit');
-
-            // تحديث الحجز
-            Route::put('/{booking}', [BookingController::class, 'update'])
-                ->name('update');
-
-            // حذف الحجز
-            Route::delete('/{booking}', [BookingController::class, 'destroy'])
-                ->name('destroy');
-
-        });
-
-});
-
+    });
 
 
 //end safwan

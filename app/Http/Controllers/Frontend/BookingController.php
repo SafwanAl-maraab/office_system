@@ -4,129 +4,287 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\Trip;
-use App\Models\Currency;
+use App\Models\Invoice;
+use App\Models\Payment;
+
+
+
+use App\Models\BranchCashbox;
+
+
 
 class BookingController extends Controller
 {
 
-    /*
-    ==========================
-    عرض الحجوزات
-    ==========================
-    */
 
+    /*
+    |--------------------------------------------------------------------------
+    | عرض صفحة الحجوزات
+    |--------------------------------------------------------------------------
+    */
     public function index(Request $request)
     {
+        $branchId = auth()->user()->employee->branch_id;
 
         $search = $request->search;
+        $status = $request->status;
 
-        $bookings = Booking::with([
+        $query = Booking::with([
             'client',
             'trip.bus',
             'currency'
-        ])
+        ])->where('branch_id', $branchId);
 
-            ->when($search, function ($query) use ($search) {
+        // البحث باسم العميل
+        if ($search) {
+            $query->whereHas('client', function ($q) use ($search) {
+                $q->where('full_name', 'like', "%$search%");
+            });
+        }
 
-                $query->whereHas('client', function ($q) use ($search) {
-                    $q->where('full_name','LIKE',"%{$search}%");
-                });
+        // فلترة الحالة
+        if ($status) {
+            $query->where('status', $status);
+        }
 
-            })
+        $bookings = $query->latest()->paginate(12);
 
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
-
-
-
-        /*
-        ==========================
-        احصائيات
-        ==========================
-        */
-
+        $clients = Client::where('branch_id',$branchId)->latest()->paginate(12);
+        $trips =    Trip::where('branch_id',$branchId)->latest()->paginate(12);
+        // احصائيات
         $stats = [
-
-            'total' => Booking::count(),
-
-            'confirmed' => Booking::where('status','confirmed')->count(),
-
-            'pending' => Booking::where('status','pending')->count(),
-
-            'cancelled' => Booking::where('status','cancelled')->count(),
-
+            'total' => Booking::where('branch_id',$branchId)->count(),
+            'confirmed' => Booking::where('branch_id',$branchId)->where('status','confirmed')->count(),
+            'pending' => Booking::where('branch_id',$branchId)->where('status','pending')->count(),
+            'cancelled' => Booking::where('branch_id',$branchId)->where('status','cancelled')->count(),
+            'sales' => Invoice::where('branch_id',$branchId)->sum('total_amount'),
+            'paid' => Payment::where('branch_id',$branchId)->sum('amount'),
         ];
 
-
         return view('frontend.bookings.index', compact(
-
             'bookings',
             'search',
-            'stats'
+            'stats',
+            'clients',
+            'trips'
+
 
         ));
     }
 
-
-
     /*
-    ==========================
-    حفظ حجز
-    ==========================
+    |--------------------------------------------------------------------------
+    | إنشاء الحجز
+    |--------------------------------------------------------------------------
     */
-
     public function store(Request $request)
     {
 
-        $request->validate([
+        DB::beginTransaction();
 
-            'client_id' => 'required',
-            'trip_id' => 'required',
-            'currency_id' => 'required',
+        try {
 
-        ]);
+            $branchId = auth()->user()->employee->branch_id;
 
+            /*
+            ==========================
+            الرحلة
+            ==========================
+            */
 
-        Booking::create([
-
-            'client_id' => $request->client_id,
-            'trip_id' => $request->trip_id,
-            'currency_id' => $request->currency_id,
-
-            'final_price' => $request->final_price,
-
-            'status' => $request->status ?? 'pending',
-
-        ]);
+            $trip = Trip::findOrFail($request->trip_id);
 
 
-        return redirect()
-            ->route('bookings.index')
-            ->with('success','تم اضافة الحجز بنجاح');
+            /*
+            ==========================
+            السعر
+            ==========================
+            */
+
+            $salePrice = $trip->sale_price;
+
+            $discountPercent = $request->discount_percent ?? 0;
+
+            $discountAmount = ($salePrice * $discountPercent) / 100;
+
+            $finalPrice = $salePrice - $discountAmount;
+
+
+            /*
+            ==========================
+            إنشاء الحجز
+            ==========================
+            */
+
+            $booking = Booking::create([
+
+                'branch_id' => $branchId,
+
+                'client_id' => $request->client_id,
+
+                'trip_id' => $trip->id,
+
+                'seat_number' => $request->seat_number,
+
+                'purchase_price' => $trip->purchase_price,
+
+                'sale_price' => $salePrice,
+
+                'discount_percent' => $discountPercent,
+
+            ]);
+
+
+            /*
+            ==========================
+            إنشاء الفاتورة
+            ==========================
+            */
+
+            $invoice = Invoice::create([
+
+                'branch_id' => $branchId,
+
+                'client_id' => $request->client_id,
+
+                'reference_type' => 'booking',
+
+                'reference_id' => $booking->id,
+
+                'total_amount' => $finalPrice,
+
+                'paid_amount' => 0,
+
+                'remaining_amount' => $finalPrice,
+
+                'cost' => $trip->purchase_price,
+
+                'currency_id' => $trip->currency_id,
+
+                'status' => 'pending',
+
+                'is_refund' => 0,
+
+            ]);
+
+
+            /*
+            ==========================
+            تسجيل دفعة
+            ==========================
+            */
+
+            $paymentAmount = $request->payment_amount ?? 0;
+
+            if ($paymentAmount > 0) {
+
+                Payment::create([
+
+                    'branch_id' => $branchId,
+
+                    'client_id' => $request->client_id,
+
+                    'invoice_id' => $invoice->id,
+
+                    'created_by' => auth()->user()->employee->id,
+
+                    'amount' => $paymentAmount,
+
+                    'currency_id' => $trip->currency_id,
+
+                    'payment_method' => 'cash',
+
+                ]);
+
+
+                /*
+                ==========================
+                تحديث الفاتورة
+                ==========================
+                */
+
+                $invoice->update([
+
+                    'paid_amount' => $paymentAmount,
+
+                    'remaining_amount' => $finalPrice - $paymentAmount,
+
+                    'status' => $paymentAmount >= $finalPrice ? 'paid' : 'partial'
+
+                ]);
+
+
+                /*
+                ==========================
+                تحديث الخزنة
+                ==========================
+                */
+
+                $cashbox = BranchCashbox::where('branch_id',$branchId)
+                    ->where('currency_id',$trip->currency_id)
+                    ->first();
+
+
+                if ($cashbox) {
+
+                    $cashbox->increment('balance',$paymentAmount);
+
+                }
+
+            }
+
+
+            DB::commit();
+
+
+            return redirect()
+                ->route('bookings.index')
+                ->with('success','تم إنشاء الحجز بنجاح');
+
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with('error','حدث خطأ أثناء إنشاء الحجز',$e);
+
+        }
+
+    }
+    public function tripSeats($tripId)
+    {
+
+        $seats = Booking::where('trip_id',$tripId)
+            ->pluck('seat_number');
+
+        return response()->json($seats);
 
     }
 
-
-
     /*
-    ==========================
-    عرض حجز
-    ==========================
+    |--------------------------------------------------------------------------
+    | عرض تفاصيل الحجز
+    |--------------------------------------------------------------------------
     */
 
     public function show($id)
     {
 
+        $branchId = auth()->user()->employee->branch_id;
+
         $booking = Booking::with([
             'client',
             'trip.bus',
-            'currency'
-        ])->findOrFail($id);
+            'currency',
+            'invoice.payments'
+        ])
+            ->where('branch_id',$branchId)
+            ->findOrFail($id);
 
 
         return view('frontend.bookings.show',compact('booking'));
@@ -136,72 +294,9 @@ class BookingController extends Controller
 
 
     /*
-    ==========================
-    صفحة التعديل
-    ==========================
-    */
-
-    public function edit($id)
-    {
-
-        $booking = Booking::findOrFail($id);
-
-        $clients = Client::all();
-
-        $trips = Trip::all();
-
-        $currencies = Currency::all();
-
-
-        return view('frontend.bookings.edit',compact(
-
-            'booking',
-            'clients',
-            'trips',
-            'currencies'
-
-        ));
-    }
-
-
-
-    /*
-    ==========================
-    تحديث الحجز
-    ==========================
-    */
-
-    public function update(Request $request,$id)
-    {
-
-        $booking = Booking::findOrFail($id);
-
-
-        $booking->update([
-
-            'client_id' => $request->client_id,
-            'trip_id' => $request->trip_id,
-            'currency_id' => $request->currency_id,
-
-            'final_price' => $request->final_price,
-
-            'status' => $request->status
-
-        ]);
-
-
-        return redirect()
-            ->route('bookings.index')
-            ->with('success','تم تعديل الحجز');
-
-    }
-
-
-
-    /*
-    ==========================
-    حذف الحجز
-    ==========================
+    |--------------------------------------------------------------------------
+    | حذف الحجز
+    |--------------------------------------------------------------------------
     */
 
     public function destroy($id)
@@ -211,12 +306,10 @@ class BookingController extends Controller
 
         $booking->delete();
 
-
-        return redirect()
-            ->route('bookings.index')
-            ->with('success','تم حذف الحجز');
+        return back()->with('success','تم حذف الحجز');
 
     }
+
 
 
 }

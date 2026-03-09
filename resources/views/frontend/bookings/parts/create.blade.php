@@ -1,175 +1,350 @@
-<div id="bookingModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+<div id="bookingModal" class="fixed inset-0 z-50 hidden">
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6 relative">
+    <!-- overlay -->
+    <div id="bookingOverlay" class="absolute inset-0 bg-black/60"></div>
 
-        <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-white">
-            إنشاء حجز جديد
-        </h2>
+    <!-- wrapper -->
+    <div class="relative w-full h-full flex items-end sm:items-center justify-center">
 
+        <div class="w-full sm:max-w-2xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-y-auto">
 
-        <form method="POST" action="{{ route('bookings.store') }}">
+            <div class="p-6 space-y-5">
 
-            @csrf
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold">
+                        إنشاء حجز جديد
+                    </h3>
 
+                    <button id="closeBookingModal" class="text-gray-500">✕</button>
+                </div>
 
-            {{-- العميل --}}
+                <form method="POST" action="{{ route('dashboard.bookings.store') }}" id="bookingForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            <div class="mb-4">
+                    @csrf
 
-                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">
-                    العميل
-                </label>
+                    <!-- client -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">العميل</label>
 
-                <select
-                    name="client_id"
-                    required
-                    class="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white">
+                        <select name="client_id" id="clientSelect"
+                                class="w-full border rounded-xl px-4 py-2">
 
-                    <option value="">اختر العميل</option>
+                            <option value="">اختر العميل</option>
 
-                    @foreach($clients as $client)
+                            @foreach($clients as $client)
+                                <option
+                                    value="{{ $client->id }}"
+                                    data-passport="{{ $client->passport_number }}"
+                                >
+                                    {{ $client->full_name }}
+                                </option>
+                            @endforeach
 
-                        <option value="{{ $client->id }}">
+                        </select>
+                    </div>
 
-                            {{ $client->full_name }}
+                    <!-- passport -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">رقم الجواز</label>
 
-                        </option>
+                        <input
+                            type="text"
+                            id="passportNumber"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
 
-                    @endforeach
+                    <!-- trip -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">الرحلة</label>
 
-                </select>
+                        <select name="trip_id" id="tripSelect"
+                                class="w-full border rounded-xl px-4 py-2">
+
+                            <option value="">اختر الرحلة</option>
+
+                            @foreach($trips as $trip)
+
+                                <option
+                                    value="{{ $trip->id }}"
+                                    data-purchase="{{ $trip->purchase_price }}"
+                                    data-sale="{{ $trip->sale_price }}"
+                                    data-currency="{{ $trip->currency->code }}"
+                                >
+
+                                    {{ $trip->from_city }} →
+                                    {{ $trip->to_city }}
+                                    | {{ $trip->trip_date }}
+
+                                </option>
+
+                            @endforeach
+
+                        </select>
+                    </div>
+
+                    <!-- seat -->
+                    <div>
+                        <label class="text-sm text-gray-500">رقم المقعد</label>
+
+                        <input
+                            type="number"
+                            name="seat_number"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <!-- discount -->
+                    <div>
+                        <label class="text-sm text-gray-500">نسبة الخصم %</label>
+
+                        <input
+                            type="number"
+                            name="discount_percent"
+                            value="0"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <!-- purchase -->
+                    <div>
+                        <label class="text-sm text-gray-500">سعر التكلفة</label>
+
+                        <input
+                            type="text"
+                            id="purchasePrice"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- sale -->
+                    <div>
+                        <label class="text-sm text-gray-500">سعر البيع</label>
+
+                        <input
+                            type="text"
+                            id="salePrice"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- currency -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">العملة</label>
+
+                        <input
+                            type="text"
+                            id="currencyCode"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- payment -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">
+                            دفعة أولية
+                        </label>
+
+                        <input
+                            type="number"
+                            name="payment_amount"
+                            value="0"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="sm:col-span-2 bg-blue-600 text-white py-3 rounded-xl"
+                    >
+                        حفظ الحجز
+                    </button>
+
+                </form>
 
             </div>
 
+        </div>
 
+    </div>
 
-            {{-- الرحلة --}}
+</div>
 
-            <div class="mb-4">
+<div id="bookingModal" class="fixed inset-0 z-50 hidden">
 
-                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">
-                    الرحلة
-                </label>
+    <!-- overlay -->
+    <div id="bookingOverlay" class="absolute inset-0 bg-black/60"></div>
 
-                <select
-                    name="trip_id"
-                    required
-                    class="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white">
+    <!-- wrapper -->
+    <div class="relative w-full h-full flex items-end sm:items-center justify-center">
 
-                    <option value="">اختر الرحلة</option>
+        <div class="w-full sm:max-w-2xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-y-auto">
 
-                    @foreach($trips as $trip)
+            <div class="p-6 space-y-5">
 
-                        <option value="{{ $trip->id }}">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold">
+                        إنشاء حجز جديد
+                    </h3>
 
-                            {{ $trip->from_city }} → {{ $trip->to_city }}
+                    <button id="closeBookingModal" class="text-gray-500">✕</button>
+                </div>
 
-                        </option>
+                <form method="POST" action="{{ route('dashboard.bookings.store') }}" id="bookingForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                    @endforeach
+                    @csrf
 
-                </select>
+                    <!-- client -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">العميل</label>
+
+                        <select name="client_id" id="clientSelect"
+                                class="w-full border rounded-xl px-4 py-2">
+
+                            <option value="">اختر العميل</option>
+
+                            @foreach($clients as $client)
+                                <option
+                                    value="{{ $client->id }}"
+                                    data-passport="{{ $client->passport_number }}"
+                                >
+                                    {{ $client->full_name }}
+                                </option>
+                            @endforeach
+
+                        </select>
+                    </div>
+
+                    <!-- passport -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">رقم الجواز</label>
+
+                        <input
+                            type="text"
+                            id="passportNumber"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- trip -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">الرحلة</label>
+
+                        <select name="trip_id" id="tripSelect"
+                                class="w-full border rounded-xl px-4 py-2">
+
+                            <option value="">اختر الرحلة</option>
+
+                            @foreach($trips as $trip)
+
+                                <option
+                                    value="{{ $trip->id }}"
+                                    data-purchase="{{ $trip->purchase_price }}"
+                                    data-sale="{{ $trip->sale_price }}"
+                                    data-currency="{{ $trip->currency->code }}"
+                                >
+
+                                    {{ $trip->from_city }} →
+                                    {{ $trip->to_city }}
+                                    | {{ $trip->trip_date }}
+
+                                </option>
+
+                            @endforeach
+
+                        </select>
+                    </div>
+
+                    <!-- seat -->
+                    <div>
+                        <label class="text-sm text-gray-500">رقم المقعد</label>
+
+                        <input
+                            type="number"
+                            name="seat_number"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <!-- discount -->
+                    <div>
+                        <label class="text-sm text-gray-500">نسبة الخصم %</label>
+
+                        <input
+                            type="number"
+                            name="discount_percent"
+                            value="0"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <!-- purchase -->
+                    <div>
+                        <label class="text-sm text-gray-500">سعر التكلفة</label>
+
+                        <input
+                            type="text"
+                            id="purchasePrice"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- sale -->
+                    <div>
+                        <label class="text-sm text-gray-500">سعر البيع</label>
+
+                        <input
+                            type="text"
+                            id="salePrice"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- currency -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">العملة</label>
+
+                        <input
+                            type="text"
+                            id="currencyCode"
+                            readonly
+                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
+                        >
+                    </div>
+
+                    <!-- payment -->
+                    <div class="sm:col-span-2">
+                        <label class="text-sm text-gray-500">
+                            دفعة أولية
+                        </label>
+
+                        <input
+                            type="number"
+                            name="payment_amount"
+                            value="0"
+                            class="w-full border rounded-xl px-4 py-2"
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="sm:col-span-2 bg-blue-600 text-white py-3 rounded-xl"
+                    >
+                        حفظ الحجز
+                    </button>
+
+                </form>
 
             </div>
 
-
-
-            {{-- العملة --}}
-
-            <div class="mb-4">
-
-                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">
-                    العملة
-                </label>
-
-                <select
-                    name="currency_id"
-                    required
-                    class="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white">
-
-                    <option value="">اختر العملة</option>
-
-                    @foreach($currencies as $currency)
-
-                        <option value="{{ $currency->id }}">
-
-                            {{ $currency->name }}
-
-                        </option>
-
-                    @endforeach
-
-                </select>
-
-            </div>
-
-
-
-            {{-- السعر النهائي --}}
-
-            <div class="mb-4">
-
-                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">
-                    السعر النهائي
-                </label>
-
-                <input
-                    type="number"
-                    name="final_price"
-                    step="0.01"
-                    class="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white">
-
-            </div>
-
-
-
-            {{-- حالة الحجز --}}
-
-            <div class="mb-6">
-
-                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">
-                    حالة الحجز
-                </label>
-
-                <select
-                    name="status"
-                    class="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white">
-
-                    <option value="pending">قيد الانتظار</option>
-                    <option value="confirmed">مؤكد</option>
-                    <option value="cancelled">ملغي</option>
-
-                </select>
-
-            </div>
-
-
-
-            {{-- الأزرار --}}
-
-            <div class="flex justify-end gap-3">
-
-                <button
-                    type="button"
-                    onclick="closeBookingModal()"
-                    class="px-4 py-2 bg-gray-500 text-white rounded-lg">
-
-                    إلغاء
-
-                </button>
-
-
-                <button
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-
-                    حفظ الحجز
-
-                </button>
-
-            </div>
-
-
-        </form>
+        </div>
 
     </div>
 
@@ -177,18 +352,66 @@
 
 <script>
 
-    function openBookingModal() {
+    document.addEventListener("DOMContentLoaded", function(){
 
-        document.getElementById('bookingModal').classList.remove('hidden');
-        document.getElementById('bookingModal').classList.add('flex');
+        const clientSelect = document.getElementById("clientSelect");
+        const passportInput = document.getElementById("passportNumber");
 
-    }
+        clientSelect.addEventListener("change", function(){
 
-    function closeBookingModal() {
+            const option = this.options[this.selectedIndex];
+            passportInput.value = option.dataset.passport || "";
 
-        document.getElementById('bookingModal').classList.remove('flex');
-        document.getElementById('bookingModal').classList.add('hidden');
+        });
 
-    }
+
+        const tripSelect = document.getElementById("tripSelect");
+
+        const purchase = document.getElementById("purchasePrice");
+        const sale = document.getElementById("salePrice");
+        const currency = document.getElementById("currencyCode");
+
+        tripSelect.addEventListener("change", function(){
+
+            const option = this.options[this.selectedIndex];
+
+            purchase.value = option.dataset.purchase || "";
+            sale.value = option.dataset.sale || "";
+            currency.value = option.dataset.currency || "";
+
+        });
+
+    });
+</script>
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function(){
+
+        const modal = document.getElementById('bookingModal')
+        const openBtn = document.querySelector('[data-open-booking]')
+        const closeBtn = document.getElementById('closeBookingModal')
+        const overlay = document.getElementById('bookingOverlay')
+
+        if(openBtn){
+            openBtn.addEventListener('click', function(){
+                modal.classList.remove('hidden')
+            })
+        }
+
+        if(closeBtn){
+            closeBtn.addEventListener('click', function(){
+                modal.classList.add('hidden')
+            })
+        }
+
+        if(overlay){
+            overlay.addEventListener('click', function(){
+                modal.classList.add('hidden')
+            })
+        }
+
+    })
 
 </script>
