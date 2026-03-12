@@ -94,24 +94,65 @@ class VisaController extends Controller
         */
 
         $visaNumber = 'V-' . date('Y') . '-' . str_pad(Visa::count()+1,5,'0',STR_PAD_LEFT);
-        $visa = Visa::create([
-            'visa_number' => $visaNumber,
+       $visa = Visa::create([
 
-            'branch_id' => $branchId,
-            'client_id' => $request->client_id,
-            'visa_type_id' => $request->visa_type_id,
-            'agent_id' => $request->agent_id,
-            'passport_number' => $request->passport_number,
-            'original_price' => $request->original_price,
-            'discount_percentage' => $request->discount_percentage,
-            'discount_amount' => $discountAmount,
-            'sale_price' => $request->sale_price,
-            'cost_price' => $request->cost_price,
-            'agent_cost' => $request->agent_cost,
-            'currency_id' => $request->currency_id,
-            'status' => 'pending',
-            'created_by' => $employee->id
-        ]);
+'visa_number' => $visaNumber,
+
+'branch_id' => $branchId,
+
+'client_id' => $request->client_id,
+
+'visa_type_id' => $request->visa_type_id,
+
+'agent_id' => $request->agent_id,
+
+'passport_number' => $request->passport_number,
+
+'original_price' => $request->original_price,
+
+'discount_percentage' => $request->discount_percentage,
+
+'discount_amount' => $discountAmount,
+
+'sale_price' => $request->sale_price,
+
+'cost_price' => $request->cost_price,
+
+'agent_cost' => $request->agent_cost,
+
+'currency_id' => $request->currency_id,
+
+'status' => 'pending',
+
+'created_by' => $employee->id
+
+]);
+
+/*
+|--------------------------------------------------------------------------
+| تسجيل دين الوكيل
+|--------------------------------------------------------------------------
+*/
+
+if($request->agent_id && $request->agent_cost){
+
+AgentTransaction::create([
+
+'agent_id'=>$request->agent_id,
+
+'branch_id'=>$branchId,
+
+'visa_id'=>$visa->id,
+
+'type'=>'visa_cost',
+
+'amount'=>$request->agent_cost,
+
+'currency_id'=>$request->currency_id
+
+]);
+
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -130,6 +171,8 @@ class VisaController extends Controller
             'currency_id' => $request->currency_id,
             'status' => 'unpaid',
             'is_refund' => false
+
+            
         ]);
 
         /*

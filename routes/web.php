@@ -445,18 +445,23 @@ Route::middleware(['auth'])
     ->prefix('dashboard')
     ->group(function () {
 
+        // عرض الوكلاء
         Route::get('/agents', [AgentController::class,'index'])
             ->name('agents.index');
 
+        // إنشاء وكيل
         Route::post('/agents', [AgentController::class,'store'])
             ->name('agents.store');
 
+        // عرض وكيل
         Route::get('/agents/{id}', [AgentController::class,'show'])
             ->name('agents.show');
 
+        // تحديث وكيل
         Route::put('/agents/{id}', [AgentController::class,'update'])
             ->name('agents.update');
 
+        // حذف وكيل
         Route::delete('/agents/{id}', [AgentController::class,'destroy'])
             ->name('agents.destroy');
 
@@ -471,14 +476,9 @@ Route::middleware(['auth'])
         // طباعة كشف حساب جميع الوكلاء
         Route::get('/agents-statement-all', [AgentController::class,'statementAll'])
             ->name('agents.statement.all');
-Route::get('/agents-export',
-    [AgentController::class,'statementAll'])
-    ->name('agents.export');
-    Route::get('/agents/{id}/statement-pdf',
-    [AgentController::class,'statementPDF'])
-    ->name('agents.statement.pdf');
 
-Route::get('/agents-statement-all',
-    [AgentController::class,'statementAll'])
-    ->name('agents.statement.all');
-    });
+        // تصدير تقرير الوكلاء
+        Route::get('/agents-export', [AgentController::class,'statementAll'])
+            ->name('agents.export');
+
+});
