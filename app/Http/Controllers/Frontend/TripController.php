@@ -135,7 +135,7 @@ class TripController extends Controller
 
             'notes' => $request->notes,
 
-            'status' => 'inactive',
+            'status' => 'scheduled',
 
             'created_by' => auth()->id()
 
@@ -144,7 +144,7 @@ class TripController extends Controller
 
         $bus->update([
 
-            'status' => 'on_trip'
+            'status' => 'inactive'
 
         ]);
 

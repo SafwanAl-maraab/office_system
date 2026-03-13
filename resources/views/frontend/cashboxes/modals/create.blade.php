@@ -1,5 +1,5 @@
 <div id="createCurrencyModal"
-     class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+     class="fixed inset-0 bg-black/60 hidden items-center  justify-center z-50">
 
     <div class="bg-white dark:bg-gray-800
             w-full max-w-md p-6 rounded-2xl">

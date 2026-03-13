@@ -37,7 +37,9 @@ class BookingController extends Controller
         $query = Booking::with([
             'client',
             'trip.bus',
-            'currency'
+            'currency',
+            'invoice'   // مهم
+
         ])->where('branch_id', $branchId);
 
         // البحث باسم العميل
@@ -259,6 +261,107 @@ class BookingController extends Controller
         }
 
     }
+
+    public function update(Request $request, Booking $booking)
+    {
+
+        DB::beginTransaction();
+
+        try{
+
+            $invoice = $booking->invoice;
+
+            if(in_array($booking->status,['departed','locked'])){
+
+                return back()->with('error','لا يمكن تعديل الحجز');
+
+            }
+
+            $newTrip = Trip::findOrFail($request->trip_id);
+
+            /*
+            منع تغيير العملة مع وجود دفعة
+            */
+
+            if(
+                $newTrip->currency_id != $invoice->currency_id
+                && $invoice->paid_amount > 0
+            ){
+
+                return back()->with(
+                    'error',
+                    'لا يمكن تغيير الرحلة بسبب اختلاف العملة'
+                );
+
+            }
+
+            /*
+            السعر الجديد
+            */
+
+            $finalPrice = $newTrip->sale_price;
+
+            /*
+            منع السعر أقل من المدفوع
+            */
+
+            if($finalPrice < $invoice->paid_amount){
+
+                return back()->with(
+                    'error',
+                    'السعر الجديد أقل من المدفوع'
+                );
+
+            }
+
+            /*
+            تحديث الحجز
+            */
+
+            $booking->update([
+
+                'trip_id'=>$newTrip->id,
+
+                'seat_number'=>$request->seat_number,
+
+                'purchase_price'=>$newTrip->purchase_price,
+
+                'sale_price'=>$newTrip->sale_price,
+
+                'discount_percent'=>0
+
+            ]);
+
+            /*
+            تحديث الفاتورة
+            */
+
+            $invoice->update([
+
+                'total_amount'=>$finalPrice,
+
+                'remaining_amount'=>$finalPrice - $invoice->paid_amount,
+
+                'cost'=>$newTrip->purchase_price,
+
+                'currency_id'=>$newTrip->currency_id
+
+            ]);
+
+            DB::commit();
+
+            return back()->with('success','تم تعديل الحجز');
+
+        }catch(\Exception $e){
+
+            DB::rollBack();
+
+            return back()->with('error','  خطأ في التعديل    '.$e->getMessage());
+
+        }
+
+    }
+
     public function tripSeats($tripId)
     {
         $trip = Trip::with('bus')->findOrFail($tripId);

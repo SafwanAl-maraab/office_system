@@ -1,286 +1,316 @@
-<div id="editModal"
-     class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
+<div id="editBookingModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center">
 
-    <div
-        class="bg-white dark:bg-gray-800 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-lg p-6">
+    <!-- الخلفية -->
 
-        <h2 class="text-xl font-bold mb-4 dark:text-white">
-            تعديل الحجز
-        </h2>
+    <div class="absolute inset-0 bg-black/60" ></div>
 
 
-        <form id="editForm" method="POST">
+    <!-- الحاوية -->
 
-            @csrf
-            @method('PUT')
+    <div class="relative w-full h-full flex items-end sm:items-center justify-center p-2 sm:p-6">
+
+        <div
+            class="w-full sm:max-w-2xl md:max-w-3xl
+        bg-white dark:bg-gray-900
+        rounded-t-3xl sm:rounded-3xl
+        shadow-2xl
+        max-h-[95vh]
+        overflow-y-auto">
 
 
-            <input type="hidden" id="edit_id">
+            <div class="p-5 sm:p-6 space-y-5">
 
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Header -->
 
-                {{-- CLIENT --}}
+                <div class="flex justify-between items-center">
 
-                <div>
+                    <h3 class="text-lg sm:text-xl font-bold dark:text-white">
+                        تعديل الحجز
+                    </h3>
 
-                    <label class="text-sm dark:text-gray-300">
-                        العميل
-                    </label>
-
-                    <select
-                        name="client_id"
-                        id="edit_client_id"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-
-                        @foreach($clients as $client)
-
-                            <option value="{{ $client->id }}">
-                                {{ $client->full_name }}
-                            </option>
-
-                        @endforeach
-
-                    </select>
+                    <button
+                        type="button"
+                        onclick="closes()"
+                        class="text-gray-500 hover:text-red-500 text-xl">
+                        ✕
+                    </button>
 
                 </div>
 
 
+                <form id="editBookingForm" method="POST">
 
-                {{-- TRIP --}}
+                    @csrf
+                    @method('PUT')
 
-                <div>
 
-                    <label class="text-sm dark:text-gray-300">
-                        الرحلة
-                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                    <select
-                        name="trip_id"
-                        id="edit_trip_id"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
 
-                        @foreach($trips as $trip)
+                        <!-- العميل -->
 
-                            <option value="{{ $trip->id }}">
-                                {{ $trip->from_city }} → {{ $trip->to_city }}
-                            </option>
+                        <div>
 
-                        @endforeach
+                            <label class="text-sm text-gray-500">
+                                العميل
+                            </label>
 
-                    </select>
+                            <select name="client_id"
+                                    id="editClient"
+                                    class="w-full border rounded-xl px-4 py-2 dark:bg-gray-800 dark:text-white">
 
-                </div>
+                                @foreach($clients as $client)
 
+                                    <option value="{{ $client->id }}">
+                                        {{ $client->full_name }}
+                                    </option>
 
+                                @endforeach
 
-                {{-- SEAT --}}
+                            </select>
 
-                <div>
+                        </div>
 
-                    <label class="text-sm dark:text-gray-300">
-                        المقعد
-                    </label>
 
-                    <input
-                        type="number"
-                        name="seat_number"
-                        id="edit_seat_number"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <!-- الرحلة -->
 
-                </div>
+                        <div>
 
+                            <label class="text-sm text-gray-500">
+                                الرحلة
+                            </label>
 
+                            <select name="trip_id"
+                                    id="editTrip"
+                                    class="w-full border rounded-xl px-4 py-2 dark:bg-gray-800 dark:text-white">
 
-                {{-- SALE PRICE --}}
+                                @foreach($trips as $trip)
 
-                <div>
+                                    <option
+                                        value="{{ $trip->id }}"
+                                        data-sale="{{ $trip->sale_price }}"
+                                        data-purchase="{{ $trip->purchase_price }}"
+                                        data-currency="{{ $trip->currency_id }}">
 
-                    <label class="text-sm dark:text-gray-300">
-                        سعر البيع
-                    </label>
+                                        {{ $trip->from_city }} → {{ $trip->to_city }}
 
-                    <input
-                        type="number"
-                        name="sale_price"
-                        id="edit_sale_price"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </option>
 
-                </div>
+                                @endforeach
 
+                            </select>
 
+                        </div>
 
-                {{-- DISCOUNT PERCENT --}}
 
-                <div>
+                        <!-- المقعد -->
 
-                    <label class="text-sm dark:text-gray-300">
-                        نسبة الخصم
-                    </label>
+                        <div>
 
-                    <input
-                        type="number"
-                        name="discount_percent"
-                        id="edit_discount_percent"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <label class="text-sm text-gray-500">
+                                المقعد
+                            </label>
 
-                </div>
+                            <input
+                                name="seat_number"
+                                id="editSeat"
+                                class="w-full border rounded-xl px-4 py-2">
 
+                        </div>
 
 
-                {{-- DISCOUNT AMOUNT --}}
+                        <!-- التكلفة -->
 
-                <div>
+                        <div>
 
-                    <label class="text-sm dark:text-gray-300">
-                        قيمة الخصم
-                    </label>
+                            <label class="text-sm text-gray-500">
+                                التكلفة
+                            </label>
 
-                    <input
-                        type="number"
-                        id="edit_discount_amount"
-                        readonly
-                        class="border px-3 py-2 rounded w-full bg-gray-100">
+                            <input
+                                id="editPurchase"
+                                class="w-full border rounded-xl px-4 py-2 bg-gray-100"
+                                readonly>
 
-                </div>
+                        </div>
 
 
+                        <!-- سعر البيع -->
 
-                {{-- TOTAL BEFORE DISCOUNT --}}
+                        <div>
 
-                <div>
+                            <label class="text-sm text-gray-500">
+                                سعر البيع
+                            </label>
 
-                    <label class="text-sm dark:text-gray-300">
-                        الإجمالي قبل الخصم
-                    </label>
+                            <input
+                                id="editSale"
+                                class="w-full border rounded-xl px-4 py-2 bg-gray-100"
+                                readonly>
 
-                    <input
-                        type="number"
-                        id="edit_total_before_discount"
-                        readonly
-                        class="border px-3 py-2 rounded w-full bg-gray-100">
+                        </div>
 
-                </div>
 
+                        <!-- السعر النهائي -->
 
+                        <div>
 
-                {{-- FINAL PRICE --}}
+                            <label class="text-sm text-gray-500">
+                                السعر النهائي
+                            </label>
 
-                <div>
+                            <input
+                                id="editFinal"
+                                class="w-full border rounded-xl px-4 py-2 bg-gray-100"
+                                readonly>
 
-                    <label class="text-sm dark:text-gray-300">
-                        السعر النهائي
-                    </label>
+                        </div>
 
-                    <input
-                        type="number"
-                        name="final_price"
-                        id="edit_final_price"
-                        readonly
-                        class="border px-3 py-2 rounded w-full bg-gray-100">
 
-                </div>
+                        <!-- العملة -->
 
+                        <div class="sm:col-span-2">
 
+                            <label class="text-sm text-gray-500">
+                                العملة
+                            </label>
 
-                {{-- PAID --}}
+                            <input
+                                id="editCurrency"
+                                class="w-full border rounded-xl px-4 py-2 bg-gray-100"
+                                readonly>
 
-                <div>
+                        </div>
 
-                    <label class="text-sm dark:text-gray-300">
-                        المدفوع
-                    </label>
 
-                    <input
-                        type="number"
-                        name="paid_amount"
-                        id="edit_paid_amount"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
 
-                </div>
 
+                    <!-- معلومات الفاتورة -->
 
+                    <div
+                        class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl text-sm">
 
-                {{-- STATUS --}}
+                        <div class="flex justify-between">
 
-                <div>
+                            <span>المدفوع</span>
 
-                    <label class="text-sm dark:text-gray-300">
-                        الحالة
-                    </label>
+                            <span
+                                id="paidAmount"
+                                class="text-green-600 font-semibold"></span>
 
-                    <select
-                        name="status"
-                        id="edit_status"
-                        class="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
 
-                        <option value="confirmed">مؤكد</option>
-                        <option value="pending">معلق</option>
-                        <option value="cancelled">ملغي</option>
+                        <div class="flex justify-between mt-1">
 
-                    </select>
+                            <span>المتبقي</span>
 
-                </div>
+                            <span
+                                id="remainingAmount"
+                                class="text-red-600 font-semibold"></span>
 
+                        </div>
+
+                    </div>
+
+
+                    <!-- الأزرار -->
+
+                    <div class="flex gap-3 pt-3">
+
+                        <button
+                            type="button"
+                            onclick="closes()"
+                            class="flex-1 border py-3 rounded-xl">
+
+                            إلغاء
+
+                        </button>
+
+                        <button
+                            class="flex-1 bg-blue-600 text-white py-3 rounded-xl">
+
+                            حفظ التعديل
+
+                        </button>
+
+                    </div>
+
+
+                </form>
 
             </div>
 
-
-
-            <div class="flex justify-end gap-3 mt-6">
-
-                <button
-                    type="button"
-                    onclick="closeEditModal()"
-                    class="bg-gray-500 text-white px-4 py-2 rounded">
-
-                    إلغاء
-
-                </button>
-
-
-                <button
-                    type="submit"
-                    class="bg-blue-600 text-white px-4 py-2 rounded">
-
-                    حفظ التعديل
-
-                </button>
-
-            </div>
-
-        </form>
+        </div>
 
     </div>
 
 </div>
 
- <script>
+<script>
+
+    const editTrip = document.getElementById("editTrip")
+
+    /* تحديث الأسعار عند تغيير الرحلة */
+
+    editTrip.addEventListener("change",function(){
+
+        const option = this.options[this.selectedIndex]
+
+        const purchase = option.dataset.purchase
+        const sale = option.dataset.sale
+        const currency = option.dataset.currency
+
+        document.getElementById("editPurchase").value = purchase
+        document.getElementById("editSale").value = sale
+        document.getElementById("editFinal").value = sale
+        document.getElementById("editCurrency").value = currency
+
+    })
 
 
-     function calculateEdit(){
+    /* فتح مودال التعديل */
 
-         let sale=parseFloat(document.getElementById("edit_sale_price").value)||0
+    document.querySelectorAll(".editBookingBtn")
+        .forEach(btn=>{
 
-         let percent=parseFloat(document.getElementById("edit_discount_percent").value)||0
+            btn.onclick = function(){
 
-         let purchase=parseFloat(document.getElementById("edit_purchase_price")?.value)||0
+                const data = JSON.parse(this.dataset.booking)
 
-         let total=purchase+sale
+                const form = document.getElementById("editBookingForm")
 
-         let discount=(total*percent)/100
+                form.action = "/dashboard/bookings/"+data.id
 
-         let final=total-discount
 
-         document.getElementById("edit_discount_amount").value=discount
+                document.getElementById("editClient").value = data.client_id
+                document.getElementById("editTrip").value = data.trip_id
+                document.getElementById("editSeat").value = data.seat_number
 
-         document.getElementById("edit_total_before_discount").value=total
 
-         document.getElementById("edit_final_price").value=final
+                document.getElementById("editPurchase").value = data.purchase_price
+                document.getElementById("editSale").value = data.sale_price
+                document.getElementById("editFinal").value = data.invoice.total_amount
+                document.getElementById("editCurrency").value = data.currency_id ?? ""
 
-     }
 
-     document.querySelectorAll(
-         "#edit_sale_price,#edit_discount_percent"
-     ).forEach(el=>el.addEventListener("input",calculateEdit))
- </script>
+                document.getElementById("paidAmount").innerText = data.invoice.paid_amount
+                document.getElementById("remainingAmount").innerText = data.invoice.remaining_amount
+
+
+                document.getElementById("editBookingModal").classList.remove("hidden")
+
+            }
+
+        })
+
+
+    /* إغلاق المودال */
+
+    function closes(){
+        document.getElementById("editBookingModal").classList.add("hidden")
+    }
+
+</script>

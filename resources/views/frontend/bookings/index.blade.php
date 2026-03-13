@@ -14,7 +14,7 @@
             <button
 
                 data-open-booking
-                class="px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+                class="px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 ">
                 + حجز جديد
             </button>
         </div>
@@ -104,12 +104,35 @@
                             عرض الفاتورة
                         </button>
 
-                        <button class="text-green-600 text-sm">
+                        <button class="text-green-600 text-sm  editBookingBtn"  >
                             تسجيل دفعة
                         </button>
 
-                        <button class="text-yellow-600 text-sm">
+                        @php
+                            $bookingData = [
+                            "id" => $booking->id,
+                            "client_id" => $booking->client_id,
+                            "trip_id" => $booking->trip_id,
+                            "seat_number" => $booking->seat_number,
+                            "purchase_price" => $booking->purchase_price,
+                            "sale_price" => $booking->sale_price,
+                           "currency_id" =>optional($booking->currency )->code?? "",
+                            "discount_percent" => $booking->discount_percent,
+                            "invoice" => [
+                            "total_amount" => optional($booking->invoice)->total_amount ?? 0,
+                            "paid_amount" => optional($booking->invoice)->paid_amount ?? 0,
+                            "remaining_amount" => optional($booking->invoice)->remaining_amount ?? 0,
+
+                            ]
+                            ];
+                        @endphp
+
+                        <button
+                            class="editBookingBtn text-yellow-600 text-sm"
+                            data-booking='@json($bookingData)'>
+
                             تعديل
+
                         </button>
 
                     </div>
@@ -128,4 +151,7 @@
     </div>
 
     @include('frontend.bookings.parts.create')
+
+    @include('frontend.bookings.parts.edit')
+
 @endsection

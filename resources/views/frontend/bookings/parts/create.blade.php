@@ -1,7 +1,7 @@
-<div id="bookingModal" class="fixed inset-0 z-50  hidden">
+<div id="bookingModal" class="fixed inset-0 z-50  hidden ">
 
     <!-- overlay -->
-    <div id="bookingOverlay" class="absolute inset-0 bg-black/60"></div>
+    <div id="bookingOverlay" class="absolute inset-0 bg-black/60  "></div>
 
     <!-- wrapper -->
     <div class="relative w-full h-full flex items-end sm:items-center justify-center overflow-y-auto">

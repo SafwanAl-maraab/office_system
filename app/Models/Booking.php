@@ -55,7 +55,8 @@ class Booking extends Model
 
     public function invoice()
     {
-        return $this->belongsTo(Employee::class,'created_by');
+        return $this->hasOne(Invoice::class,'reference_id')
+            ->where('reference_type','booking');
     }
 
     public function branch()

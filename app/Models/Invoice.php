@@ -46,9 +46,16 @@ class Invoice extends Model
         return $this->hasMany(Invoice::class,'reversed_invoice_id');
     }
 
-    public function invoice()
+//
+//    public function invoice()
+//    {
+//        return $this->hasOne(Invoice::class,'reference_id')
+//            ->where('reference_type','booking');
+//    }
+
+    public function booking()
     {
-        return $this->hasOne(Invoice::class,'reference_id')
-            ->where('reference_type','booking');
+        return $this->belongsTo(\App\Models\Booking::class);
     }
+
 }
