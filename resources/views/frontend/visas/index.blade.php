@@ -2,6 +2,8 @@
 
 @section('content')
 
+
+
 <div class="p-6 space-y-8">
 
     <!-- HEADER -->

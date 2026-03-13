@@ -40,13 +40,14 @@ type="text"
 id="clientSearch"
 placeholder="ابحث باسم العميل"
 class="input" 
-
+required
 >
 
 <input
 type="hidden"
 name="client_id"
 id="client_id" 
+
 >
 
 <div
@@ -65,7 +66,9 @@ class="absolute  w-full bg-white dark:bg-gray-800 shadow rounded mt-1 hidden z-5
 type="text"
 name="passport_number"
 id="passport_number"
-class="input">
+class="input"
+required
+>
 
 </div>
 
@@ -130,7 +133,10 @@ class="input">
 <input type="number"
 name="original_price"
 id="original_price"
-class="input">
+class="input"
+min="0"
+
+>
 
 </div>
 
@@ -143,7 +149,9 @@ class="input">
 name="agent_cost"
 id="agent_cost"
 class="input" 
-value="0">
+value="0"
+min="0"
+>
 
 </div>
 
@@ -156,7 +164,9 @@ value="0">
 name="sale_price"
 id="sale_price"
 class="input"
-required>
+required
+min="0"
+>
 
 </div>
 
@@ -170,6 +180,7 @@ name="discount_percentage"
 id="discount_percentage"
 class="input"
 value="0"
+min="0"
 >
 
 </div>
@@ -231,7 +242,7 @@ readonly>
 
 <label class="flex items-center gap-2 text-xs">
 
-<input type="checkbox" id="agent_toggle">
+<input type="checkbox" id="agent_toggle" name="chagent">
 
 ربط وكيل
 
@@ -297,7 +308,7 @@ class="btn-gray">
 </button>
 
 <button type="submit"
-class="btn-blue">
+class="btn-blue" >
 
 حفظ
 
@@ -503,10 +514,16 @@ agentToggle.addEventListener("change", function(){
 if(this.checked){
 
 agentBox.classList.remove("hidden");
+// agentBox.style.require=tru
+
+agentBox.setAttribute("required", "required");
+
 
 }else{
 
 agentBox.classList.add("hidden");
+
+
 
 /* مسح القيمة */
 

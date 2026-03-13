@@ -71,6 +71,9 @@ class VisaController extends Controller
     DB::beginTransaction();
 
     try {
+if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
+    return back()->with('error', 'لم يتم اختيار وكيل');
+}
 
         $employee = auth()->user()->employee;
         $branchId = $employee->branch_id;
