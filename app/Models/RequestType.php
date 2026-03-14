@@ -27,8 +27,8 @@ public function currency()
 return $this->belongsTo(Currency::class);
 }
 
-public function requests()
+public function request()
 {
-return $this->hasMany(Request::class);
+return $this->hasMany(Request::class ,'request_type_id');
 }
 }

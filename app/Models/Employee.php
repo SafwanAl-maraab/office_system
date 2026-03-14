@@ -44,7 +44,7 @@ class Employee extends Model
 
     public function payments()
     {
-        return $this->hasMany(\App\Models\Payment::class);
+        return $this->hasMany(\App\Models\Payment::class , 'created_by');
     }
 
     public function expenses()

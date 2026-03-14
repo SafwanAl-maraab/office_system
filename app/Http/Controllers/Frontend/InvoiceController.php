@@ -19,7 +19,7 @@ class InvoiceController extends Controller
     {
         $branchId = auth()->user()->employee->branch_id;
 
-        $query = Invoice::with(['client','currency'])
+        $query = Invoice::with(['client','currency' ,'request.requestType' ,'visa.visaType'])
             ->where('branch_id',$branchId)
             ->latest();
 
@@ -42,6 +42,16 @@ class InvoiceController extends Controller
             }
             if ($request->type === 'refund') {
                 $query->where('is_refund',true);
+            }
+
+            if ($request->type === 'visa') {
+                $query->where('reference_type','visa');
+            }
+            if ($request->type === 'request') {
+                $query->where('reference_type','request');
+            }
+            if ($request->type === 'booking') {
+                $query->where('reference_type','booking');
             }
         }
 
@@ -112,6 +122,7 @@ class InvoiceController extends Controller
                 'remaining_amount' => 0,
                 'currency_id' => $originalInvoice->currency_id,
                 'status' => 'paid',
+                'cost' => 0,
                 'is_refund' => true,
                 'reversed_invoice_id' => $originalInvoice->id,
             ]);

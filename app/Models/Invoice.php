@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 
 class Invoice extends Model
 {
@@ -36,6 +37,7 @@ class Invoice extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
     public function currency()
     {
         return $this->belongsTo(\App\Models\Currency::class);
@@ -43,7 +45,7 @@ class Invoice extends Model
 
     public function refundInvoices()
     {
-        return $this->hasMany(Invoice::class,'reversed_invoice_id');
+        return $this->hasMany(Invoice::class, 'reversed_invoice_id');
     }
 
 //
@@ -57,5 +59,16 @@ class Invoice extends Model
     {
         return $this->belongsTo(\App\Models\Booking::class);
     }
+
+    public function request()
+    {
+        return $this->belongsTo(\App\Models\Request::class ,'reference_id' );
+    }
+
+    public function visa()
+    {
+        return $this->belongsTo(\App\Models\Visa::class ,'reference_id' );
+    }
+
 
 }

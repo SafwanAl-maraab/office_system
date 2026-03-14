@@ -56,7 +56,7 @@ class Request extends Model
 
     public function requestType()
     {
-        return $this->belongsTo(RequestType::class);
+        return $this->belongsTo(RequestType::class );
     }
 
 

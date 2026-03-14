@@ -22,9 +22,9 @@ class VisaType extends Model
         'status' => 'boolean'
     ];
 
-    public function visas()
+    public function visa()
     {
-        return $this->hasMany(Visa::class);
+        return $this->hasMany(Visa::class ,'visa_type_id');
     }
 
 

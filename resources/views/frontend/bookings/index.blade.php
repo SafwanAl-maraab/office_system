@@ -100,9 +100,12 @@
 
                     <div class="flex justify-between pt-3">
 
-                        <button class="text-blue-600 text-sm">
-                            عرض الفاتورة
-                        </button>
+                        <a href="{{ route('bookings.show',$booking->id) }}"
+                           class="text-blue-600 text-sm font-semibold hover:underline">
+
+                            عرض
+
+                        </a>
 
                         <button class="text-green-600 text-sm  editBookingBtn"  >
                             تسجيل دفعة

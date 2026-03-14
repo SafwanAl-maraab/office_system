@@ -44,6 +44,17 @@
                 <option value="refund" {{ request('type')=='refund'?'selected':'' }}>
                     مسترجعة
                 </option>
+                <option value="booking" {{ request('type')=='booking'?'selected':'' }}>
+                    حجز سفر
+                </option>
+
+                <option value="visa" {{ request('type')=='visa'?'selected':'' }}>
+                   تاشيرات
+                </option>
+                <option value="request" {{ request('type')=='request'?'selected':'' }}>
+                    طلب
+                </option>
+
             </select>
 
             {{-- حالة الفاتورة --}}
@@ -75,6 +86,9 @@
             @forelse($invoices as $invoice)
 
                 @php
+                $reference_type =$invoice->reference_type;
+                $requestName =$invoice->request->requestType->name ?? 'طلب غير معروف';
+                $visaName =$invoice->visa->visaType->name ?? 'تاشيرة غير معروف';
                     $isRefund = $invoice->is_refund;
                     $currency = $invoice->currency->symbol ?? '';
                     $progress = $invoice->total_amount > 0
@@ -103,11 +117,25 @@
 
                         <div class="flex flex-col gap-1 items-end">
 
-                        <span class="text-xs px-3 py-1 rounded-full
+
+
+ <span class="text-xs px-3 py-1 rounded-full
                             {{ $isRefund
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-blue-100 text-blue-700' }}">
-                            {{ $isRefund ? 'مسترجعة' : 'عادية' }}
+@if($reference_type === "booking")
+
+    {{$visaName}}
+     @elseif($reference_type === "visa")
+{{'تاشيرة'}}
+     @elseif($reference_type === "request")
+{{$requestName}}
+
+     @elseif($reference_type === "refund")
+{{'مسترجع'}}
+     @endif
+
+
                         </span>
 
                             <span class="text-xs px-3 py-1 rounded-full

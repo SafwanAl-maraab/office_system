@@ -383,26 +383,25 @@ class BookingController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function show($id)
+    public function show(Booking $booking)
     {
 
-        $branchId = auth()->user()->employee->branch_id;
+        $booking->load([
 
-        $booking = Booking::with([
             'client',
             'trip.bus',
-            'currency',
-            'invoice.payments'
-        ])
-            ->where('branch_id',$branchId)
-            ->findOrFail($id);
+            'trip.currency',
+            'invoice.payments.employee',
+            'invoice.payments.currency'
 
+        ]);
 
-        return view('frontend.bookings.show',compact('booking'));
+        return view(
+            'frontend.bookings.show',
+            compact('booking')
+        );
 
     }
-
-
 
     /*
     |--------------------------------------------------------------------------

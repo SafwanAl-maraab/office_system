@@ -192,8 +192,8 @@ Route::middleware(['auth'])
         ==========================
         */
 
-        Route::get('/bookings/{booking}/invoice', [BookingController::class,'invoice'])
-            ->name('bookings.invoice');
+        Route::get('/bookings/{booking}/invoice', [BookingController::class,'show'])
+            ->name('bookings.show');
 
 
         /*
@@ -282,7 +282,10 @@ Route::middleware(['auth'])
 
     });
 ////
-
+Route::get(
+    '/dashboard/bookings/{booking}',
+    [BookingController::class,'show']
+)->name('bookings.show');
 
 
 Route::middleware(['auth'])
@@ -438,7 +441,7 @@ Route::middleware(['auth'])
 
 
     });
-// الوكلاء محمد المعرب 
+// الوكلاء محمد المعرب
 use App\Http\Controllers\Frontend\AgentController;
 
 Route::middleware(['auth'])

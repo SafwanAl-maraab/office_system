@@ -71,10 +71,7 @@ class Visa extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function visaType()
-    {
-        return $this->belongsTo(VisaType::class);
-    }
+
 
     public function package()
     {
@@ -105,6 +102,9 @@ class Visa extends Model
     {
         return $this->belongsTo(Currency::class);
     }
+
+
+
 
     public function invoice()
     {
@@ -160,4 +160,10 @@ class Visa extends Model
     {
         return $this->status === 'pending';
     }
+
+    public function visaType()
+    {
+        return $this->belongsTo(VisaType::class  );
+    }
+
 }
