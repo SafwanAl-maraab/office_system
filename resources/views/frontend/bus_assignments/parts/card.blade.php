@@ -79,6 +79,14 @@ bg-red-100 text-red-600
 
         </button>
 
+        <button
+            data-open-create
+            data-bus="{{ $record->bus_id }}"
+            class="text-blue-600 text-sm">
+
+            ➕ إضافة سائق
+
+        </button>
 
         <form method="POST"
               action="{{ route('dashboard.bus_assignments.destroy',$record->id) }}">

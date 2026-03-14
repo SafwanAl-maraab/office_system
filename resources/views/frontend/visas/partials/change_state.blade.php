@@ -8,14 +8,14 @@
             تغيير حالة التأشيرة
         </h2>
 
-        <form method="POST"
-              action="{{ route('visas.changeStatus',$visa->id) }}"
-              class="space-y-6">
+        <form method="POST" id="statusForm" enctype="multipart/form-data">
             @csrf
 
-            <!-- SELECT STATUS -->
-            <div>
-                <label class="block text-sm mb-2">اختر الحالة الجديدة</label>
+            <!-- الحالة -->
+            <div class="space-y-2">
+                <label class="block text-sm font-medium">
+                    اختر الحالة الجديدة
+                </label>
 
                 <select name="status"
                         id="statusSelect"
@@ -24,26 +24,17 @@
                                bg-white dark:bg-gray-800 text-gray-800 dark:text-white
                                focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
-                    <option value="pending" {{ $visa->isPending() ? 'selected':'' }}>
-                        Pending
-                    </option>
-
-                    <option value="issued" {{ $visa->isIssued() ? 'selected':'' }}>
-                        Issued
-                    </option>
-
-                    <option value="cancelled" {{ $visa->isCancelled() ? 'selected':'' }}>
-                        Cancelled
-                    </option>
+                    <option value="pending">قيد المعالجة</option>
+                    <option value="issued">صادرة</option>
+                    <option value="cancelled">ملغية</option>
 
                 </select>
             </div>
 
-            <!-- CANCEL REASON -->
-            <div id="cancelReasonBox"
-                 class="hidden">
+            <!-- سبب الإلغاء -->
+            <div id="cancelReasonBox" class="hidden mt-4 space-y-2">
 
-                <label class="block text-sm mb-2 text-red-600">
+                <label class="block text-sm font-medium text-red-600">
                     سبب الإلغاء
                 </label>
 
@@ -56,12 +47,33 @@
 
             </div>
 
-            <!-- ACTIONS -->
-            <div class="flex justify-end gap-4 pt-4">
+            <!-- رفع ملف التأشيرة -->
+            <div id="visaFileBox" class="hidden mt-4 space-y-2">
+
+                <label class="text-sm font-medium text-green-600">
+                    ملف التأشيرة (صورة أو PDF)
+                </label>
+
+                <input type="file"
+                       name="visa_file"
+                       accept="image/*,.pdf"
+                       class="w-full border border-gray-300 dark:border-gray-700
+                              bg-white dark:bg-gray-800
+                              text-gray-800 dark:text-white
+                              rounded-xl px-4 py-2">
+
+                <p class="text-xs text-gray-500">
+                    يمكن رفع صورة أو ملف PDF
+                </p>
+
+            </div>
+
+            <!-- الأزرار -->
+            <div class="flex justify-end gap-4 pt-6">
 
                 <button type="button"
                         onclick="closeStatusModal()"
-                        class="px-4 py-2 bg-gray-400 text-white rounded-xl">
+                        class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-xl">
                     إلغاء
                 </button>
 
@@ -78,20 +90,55 @@
 </div>
 
 <script>
-function openStatusModal(){
+
+function openStatusModal(id){
+
+    if(!id){
+        alert("خطأ: لم يتم العثور على رقم التأشيرة");
+        return;
+    }
+
+    let form = document.getElementById('statusForm');
+
+    form.action = "/visas/" + id + "/change-status";
+
     document.getElementById('statusModal').classList.remove('hidden');
 }
+
 function closeStatusModal(){
     document.getElementById('statusModal').classList.add('hidden');
 }
 
-// إظهار سبب الإلغاء عند اختيار cancelled
-document.getElementById('statusSelect').addEventListener('change',function(){
-    let box=document.getElementById('cancelReasonBox');
-    if(this.value==='cancelled'){
-        box.classList.remove('hidden');
-    }else{
-        box.classList.add('hidden');
-    }
-});
+let statusSelect = document.getElementById('statusSelect');
+
+if(statusSelect){
+
+    statusSelect.addEventListener('change',function(){
+
+        let cancelBox = document.getElementById('cancelReasonBox');
+        let visaFileBox = document.getElementById('visaFileBox');
+
+        if(this.value === 'cancelled'){
+
+            cancelBox.classList.remove('hidden');
+            visaFileBox.classList.add('hidden');
+
+        }
+        else if(this.value === 'issued'){
+
+            visaFileBox.classList.remove('hidden');
+            cancelBox.classList.add('hidden');
+
+        }
+        else{
+
+            cancelBox.classList.add('hidden');
+            visaFileBox.classList.add('hidden');
+
+        }
+
+    });
+
+}
+
 </script>
