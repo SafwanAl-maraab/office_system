@@ -100,7 +100,24 @@
                     @else
                         bg-yellow-100 text-yellow-700
                     @endif">
-                    {{ ucfirst($visa->status) }}
+
+                    @switch($visa->status)
+                        @case('issued')
+                            صادرة
+                            @break
+
+                        @case('cancelled')
+                            ملغية
+                            @break
+
+                        @case('pending')
+                            قيد المعالجة
+                            @break
+
+                        @default
+                            غير معروف
+                    @endswitch
+
                 </span>
 
             </div>
@@ -261,12 +278,7 @@ window.addEventListener('click', function(e){
     if(e.target.id === 'createModal'){
         closeCreateModal();
     }
-
-
 });
-
 </script>
-
-
 
 @endsection
