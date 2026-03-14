@@ -19,6 +19,12 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+
+            $table->foreignId('agent_id')
+                ->nullable()
+                ->constrained('agents')
+                ->nullOnDelete();
+
             // رقم اللوحة
             $table->string('plate_number')->unique();
 

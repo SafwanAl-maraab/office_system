@@ -17,6 +17,7 @@ class Bus extends Model
     protected $fillable = [
         'branch_id',
         'plate_number',
+        'agent_id',
         'model',
         'capacity',
         'status',
@@ -38,5 +39,31 @@ class Bus extends Model
     public function trips()
     {
         return $this->hasMany(Trip::class);
+    }
+
+
+
+
+
+    public function currentTrip()
+    {
+        return $this->hasOne(Trip::class)
+            ->whereDate('trip_date',today())
+            ->latest();
+    }
+
+
+
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    public function drivers()
+    {
+        return $this->belongsToMany(
+            Driver::class,
+            'bus_drivers'
+        )->withPivot('start_at','end_at','active');
     }
 }

@@ -1,72 +1,106 @@
-<div id="bookingModal" class="fixed inset-0 z-50  hidden ">
+<div id="bookingModal" class="fixed inset-0 z-50 hidden">
 
     <!-- overlay -->
-    <div id="bookingOverlay" class="absolute inset-0 bg-black/60  "></div>
+    <div id="bookingOverlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
     <!-- wrapper -->
-    <div class="relative w-full h-full flex items-end sm:items-center justify-center overflow-y-auto">
+    <div class="relative w-full h-full flex items-end sm:items-center justify-center p-4">
 
-        <div class="w-full sm:max-w-2xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-y-auto">
+        <div class="w-full sm:max-w-3xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
-            <div class="p-6 space-y-5  "  >
+            <!-- HEADER -->
+            <div class="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
 
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold">
-                        إنشاء حجز جديد
-                    </h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                    إنشاء حجز جديد
+                </h3>
 
-                    <button id="closeBookingModal" class="text-gray-500">✕</button>
-                </div>
+                <button id="closeBookingModal"
+                        class="text-gray-500 hover:text-red-500 text-xl">
+                    ✕
+                </button>
 
-                <form method="POST" action="{{ route('dashboard.bookings.store') }}" id="bookingForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            </div>
+
+
+            <!-- BODY -->
+            <div class="p-6 overflow-y-auto">
+
+                <form method="POST"
+                      action="{{ route('dashboard.bookings.store') }}"
+                      id="bookingForm"
+                      class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     @csrf
 
+
                     <!-- client -->
                     <div class="sm:col-span-2">
-                        <label class="text-sm text-gray-500">العميل</label>
+
+                        <label class="text-sm text-gray-500">
+                            العميل
+                        </label>
 
                         <select
                             name="client_id"
                             id="clientSelect"
                             required
-                            class="w-full border rounded-xl px-4 py-2">
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500">
 
                             <option value="">اختر العميل</option>
 
                             @foreach($clients as $client)
+
                                 <option
                                     value="{{ $client->id }}"
-                                    data-passport="{{ $client->passport_number }}"
-                                >
+                                    data-passport="{{ $client->passport_number }}">
+
                                     {{ $client->full_name }}
+
                                 </option>
+
                             @endforeach
 
                         </select>
+
                     </div>
+
 
                     <!-- passport -->
                     <div class="sm:col-span-2">
-                        <label class="text-sm text-gray-500">رقم الجواز</label>
+
+                        <label class="text-sm text-gray-500">
+                            رقم الجواز
+                        </label>
 
                         <input
                             type="text"
                             id="passportNumber"
                             readonly
-                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
-                        >
+                            class="w-full border border-gray-300
+                            dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 bg-gray-50">
+
                     </div>
+
 
                     <!-- trip -->
                     <div class="sm:col-span-2">
-                        <label class="text-sm text-gray-500">الرحلة</label>
+
+                        <label class="text-sm text-gray-500">
+                            الرحلة
+                        </label>
 
                         <select
                             name="trip_id"
                             id="tripSelect"
                             required
-                            class="w-full border rounded-xl px-4 py-2">
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500">
 
                             <option value="">اختر الرحلة</option>
 
@@ -76,8 +110,7 @@
                                     value="{{ $trip->id }}"
                                     data-purchase="{{ $trip->purchase_price }}"
                                     data-sale="{{ $trip->sale_price }}"
-                                    data-currency="{{ $trip->currency->code }}"
-                                >
+                                    data-currency="{{ $trip->currency->code }}">
 
                                     {{ $trip->from_city }} →
                                     {{ $trip->to_city }}
@@ -88,11 +121,11 @@
                             @endforeach
 
                         </select>
+
                     </div>
 
-                    <!-- seat -->
 
-                    <!-- seat -->
+                    <!-- seats -->
                     <div class="sm:col-span-2">
 
                         <label class="text-sm text-gray-500 mb-2 block">
@@ -102,13 +135,18 @@
                         <input type="hidden" name="seat_number" id="seatNumber">
 
                         <div id="seatsContainer"
-                             class="grid grid-cols-5 gap-2 mt-2">
+                             class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-2">
                         </div>
 
                     </div>
+
+
                     <!-- discount -->
                     <div>
-                        <label class="text-sm text-gray-500">نسبة الخصم %</label>
+
+                        <label class="text-sm text-gray-500">
+                            نسبة الخصم %
+                        </label>
 
                         <input
                             type="number"
@@ -116,67 +154,102 @@
                             value="0"
                             min="0"
                             max="100"
-                            class="w-full border rounded-xl px-4 py-2">
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2">
+
                     </div>
+
 
                     <!-- purchase -->
                     <div>
-                        <label class="text-sm text-gray-500">سعر التكلفة</label>
+
+                        <label class="text-sm text-gray-500">
+                            سعر التكلفة
+                        </label>
 
                         <input
                             type="text"
                             id="purchasePrice"
                             readonly
-                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
-                        >
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 bg-gray-50">
+
                     </div>
+
 
                     <!-- sale -->
                     <div>
-                        <label class="text-sm text-gray-500">سعر البيع</label>
+
+                        <label class="text-sm text-gray-500">
+                            سعر البيع
+                        </label>
 
                         <input
                             type="text"
                             id="salePrice"
                             readonly
-                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
-                        >
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 bg-gray-50">
+
                     </div>
+
 
                     <!-- currency -->
                     <div class="sm:col-span-2">
-                        <label class="text-sm text-gray-500">العملة</label>
+
+                        <label class="text-sm text-gray-500">
+                            العملة
+                        </label>
 
                         <input
                             type="text"
                             id="currencyCode"
                             readonly
-                            class="w-full border rounded-xl px-4 py-2 bg-gray-50"
-                        >
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2 bg-gray-50">
+
                     </div>
+
 
                     <!-- payment -->
                     <div class="sm:col-span-2">
+
                         <label class="text-sm text-gray-500">
                             دفعة أولية
                         </label>
+
                         <input
                             type="number"
                             name="payment_amount"
                             value="0"
                             min="0"
                             step="0.01"
-                            class="w-full border rounded-xl px-4 py-2">
+                            class="w-full border border-gray-300 dark:border-gray-700
+                            dark:bg-gray-800 dark:text-white
+                            rounded-xl px-4 py-2">
+
                     </div>
 
-                    <button
-                        type="submit"
-                        class="sm:col-span-2 bg-blue-600 text-white py-3 rounded-xl"
-                    >
-                        حفظ الحجز
-                    </button>
-
                 </form>
+
+            </div>
+
+
+            <!-- FOOTER -->
+            <div class="px-6 py-4 border-t dark:border-gray-700 flex justify-end">
+
+                <button
+                    type="submit"
+                    form="bookingForm"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold">
+
+                    حفظ الحجز
+
+                </button>
 
             </div>
 

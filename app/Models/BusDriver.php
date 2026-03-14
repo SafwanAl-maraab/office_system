@@ -3,16 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 class BusDriver extends Model
 {
     protected $fillable = [
+        'branch_id',
+
         'bus_id',
         'driver_id',
         'start_at',
         'end_at',
-        'active',
+        'active'
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
+    }
 
     public function bus()
     {

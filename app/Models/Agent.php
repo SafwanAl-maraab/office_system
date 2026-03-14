@@ -81,4 +81,9 @@ return $this->transactions()
 ->with('currency');
 }
 
+
+    public function buses()
+    {
+        return $this->hasMany(Bus::class);
+    }
 }

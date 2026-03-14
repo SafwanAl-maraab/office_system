@@ -1,5 +1,7 @@
 <?php
 
+
+
 use App\Http\Controllers\Frontend\ExpenseController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -202,7 +204,10 @@ Route::middleware(['auth'])
         Route::get('/bookings/{booking}/invoice', [BookingController::class,'show'])
             ->name('bookings.show');
 
-
+        Route::patch(
+            '/bookings/{booking}/status',
+            [BookingController::class,'changeStatus']
+        )->name('bookings.changeStatus');
         /*
         ==========================
         تسجيل دفعة
@@ -313,7 +318,73 @@ Route::middleware(['auth'])
 
     });
 
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->name('dashboard.')
+    ->group(function () {
 
+        /*
+        |--------------------------------
+        | المدفوعات
+        |--------------------------------
+        */
+
+        Route::prefix('payments')
+            ->name('payments.')
+            ->group(function () {
+
+                // عرض المدفوعات + البحث
+                Route::get(
+                    '/',
+                    [\App\Http\Controllers\Frontend\PaymentController::class, 'index']
+                )->name('index');
+
+                // إنشاء دفعة جديدة
+                Route::post(
+                    '/store',
+                    [\App\Http\Controllers\Frontend\PaymentController::class, 'store']
+                )->name('store');
+
+                // عرض تفاصيل الدفعة
+                Route::get(
+                    '/{payment}',
+                    [\App\Http\Controllers\Frontend\PaymentController::class, 'show']
+                )->name('show');
+
+            });
+
+    });
+
+use App\Http\Controllers\Frontend\BusAssignmentController;
+
+Route::prefix('dashboard')
+    ->name('dashboard.')
+    ->group(function(){
+
+        Route::get(
+            '/bus-assignments',
+            [BusAssignmentController::class,'index']
+        )->name('bus_assignments.index');
+
+
+        Route::post(
+            '/bus-assignments',
+            [BusAssignmentController::class,'store']
+        )->name('bus_assignments.store');
+
+
+        Route::put(
+            '/bus-assignments/{id}',
+            [BusAssignmentController::class,'update']
+        )->name('bus_assignments.update');
+
+
+        Route::delete(
+            '/bus-assignments/{id}',
+            [BusAssignmentController::class,'destroy']
+        )->name('bus_assignments.destroy');
+
+    });
 //end safwan
 
 

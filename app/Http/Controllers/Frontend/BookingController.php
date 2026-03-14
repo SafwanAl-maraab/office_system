@@ -421,5 +421,47 @@ class BookingController extends Controller
     }
 
 
+    public function changeStatus(Request $request, Booking $booking)
+    {
+
+        $status = $request->status;
+
+        /*
+        ============================
+        مكان الأكواد المستقبلية
+        ============================
+        */
+
+        if($status == 'issued'){
+
+// هنا يمكنك إضافة منطق مستقبلي
+// مثال:
+// إرسال إشعار
+// إنشاء ملف PDF
+// تسجيل عملية
+
+        }
+
+        /*
+        ============================
+        تحديث الحالة
+        ============================
+        */
+
+        $booking->update([
+
+            'status'=>$status
+
+        ]);
+
+        return back()->with(
+
+            'success',
+            'تم تغيير الحالة بنجاح'
+
+        );
+
+    }
+
 
 }

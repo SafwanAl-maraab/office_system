@@ -41,4 +41,17 @@ class Driver extends Model
     }
 
 
+    public function travels()
+    {
+        return $this->hasMany(Travel::class);
+    }
+
+    public function buses()
+    {
+        return $this->belongsToMany(
+            Bus::class,
+            'bus_drivers'
+        )->withPivot('start_at','end_at','active');
+    }
+
 }

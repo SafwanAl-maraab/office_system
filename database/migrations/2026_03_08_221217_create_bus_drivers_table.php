@@ -11,6 +11,12 @@ return new class extends Migration
 
             $table->id();
 
+            $table->foreignId('branch_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+
+
             $table->foreignId('bus_id')
                 ->constrained()
                 ->cascadeOnDelete();
@@ -19,9 +25,8 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->timestamp('start_at'); // بداية القيادة
-
-            $table->timestamp('end_at')->nullable(); // نهاية القيادة
+            $table->time('start_at');
+            $table->time('end_at')->nullable();
 
             $table->boolean('active')->default(true);
 

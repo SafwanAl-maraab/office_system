@@ -4,17 +4,18 @@
 
     <div class="max-w-4xl mx-auto p-4">
 
-        <div class="flex justify-between mb-4">
+        {{-- actions --}}
+        <div class="flex justify-between items-center mb-6 print:hidden">
 
             <a href="{{ route('dashboard.bookings.index') }}"
-               class="text-gray-600 hover:underline">
+               class="text-gray-600 hover:text-black">
 
                 ← رجوع
 
             </a>
 
             <button onclick="window.print()"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow">
 
                 طباعة التذكرة
 
@@ -23,43 +24,33 @@
         </div>
 
 
-        {{-- منطقة الطباعة --}}
+        {{-- التذكرة --}}
+        <div class="print-area bg-white border rounded-2xl shadow-lg p-8 space-y-6">
 
-        <div class="print-area bg-white shadow-lg rounded-xl p-6">
 
-
-            {{-- رأس التذكرة --}}
-
-            <div class="flex justify-between items-center border-b pb-3">
+            {{-- header --}}
+            <div class="flex justify-between items-center border-b pb-4">
 
                 <div>
 
-                    <h2 class="text-lg font-bold">
-
-                        تذكرة سفر
-
+                    <h2 class="text-xl font-bold">
+                        🎫 تذكرة سفر
                     </h2>
 
                     <p class="text-sm text-gray-500">
-
                         {{ config('app.name') }}
-
                     </p>
 
                 </div>
 
                 <div class="text-right">
 
-                    <p class="text-sm">
-
+                    <p class="text-sm text-gray-500">
                         رقم الحجز
-
                     </p>
 
-                    <p class="font-bold">
-
+                    <p class="text-xl font-bold">
                         #{{ $booking->id }}
-
                     </p>
 
                 </div>
@@ -68,195 +59,35 @@
 
 
 
-            {{-- بيانات العميل --}}
-
-            <div class="grid grid-cols-2 gap-4 mt-4">
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">اسم المسافر</p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->client->full_name }}
-
-                    </p>
-
-                </div>
-
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">رقم الجواز</p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->client->passport_number }}
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-
-            {{-- بيانات الرحلة --}}
-
-            <div class="grid grid-cols-3 gap-4 mt-6">
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">
-
-                        من
-
-                    </p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->trip->from_city }}
-
-                    </p>
-
-                </div>
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">
-
-                        إلى
-
-                    </p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->trip->to_city }}
-
-                    </p>
-
-                </div>
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">
-
-                        المقعد
-
-                    </p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->seat_number }}
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-
-            {{-- تاريخ الرحلة --}}
-
-            <div class="grid grid-cols-2 gap-4 mt-6">
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">
-
-                        تاريخ الرحلة
-
-                    </p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->trip->trip_date }}
-
-                    </p>
-
-                </div>
-
-                <div>
-
-                    <p class="text-gray-500 text-sm">
-
-                        وقت الرحلة
-
-                    </p>
-
-                    <p class="font-semibold">
-
-                        {{ $booking->trip->trip_time }}
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-
-            {{-- الفاتورة --}}
-
-            <div class="border-t mt-6 pt-4">
-
-                <h3 class="font-semibold mb-2">
-
-                    تفاصيل الفاتورة
-
+            {{-- passenger --}}
+            <div>
+
+                <h3 class="font-semibold mb-3 text-gray-700">
+                    بيانات المسافر
                 </h3>
 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 gap-6">
 
                     <div>
 
-                        <p class="text-gray-500 text-sm">
-
-                            السعر النهائي
-
+                        <p class="text-sm text-gray-500">
+                            الاسم
                         </p>
 
-                        <p class="font-semibold">
-
-                            {{ $booking->invoice->total_amount }}
-
-                            {{ $booking->invoice->currency->code }}
-
+                        <p class="font-semibold text-lg">
+                            {{ $booking->client->full_name }}
                         </p>
 
                     </div>
 
-
                     <div>
 
-                        <p class="text-gray-500 text-sm">
-
-                            المدفوع
-
+                        <p class="text-sm text-gray-500">
+                            رقم الجواز
                         </p>
 
-                        <p class="font-semibold text-green-600">
-
-                            {{ $booking->invoice->paid_amount }}
-
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p class="text-gray-500 text-sm">
-
-                            المتبقي
-
-                        </p>
-
-                        <p class="font-semibold text-red-600">
-
-                            {{ $booking->invoice->remaining_amount }}
-
+                        <p class="font-semibold text-lg">
+                            {{ $booking->client->passport_number }}
                         </p>
 
                     </div>
@@ -267,31 +98,159 @@
 
 
 
-            {{-- جدول الدفعات --}}
+            {{-- trip --}}
+            <div>
 
+                <h3 class="font-semibold mb-3 text-gray-700">
+                    تفاصيل الرحلة
+                </h3>
+
+                <div class="grid grid-cols-3 gap-6 text-center">
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+
+                        <p class="text-sm text-gray-500">
+                            من
+                        </p>
+
+                        <p class="font-bold text-lg">
+                            {{ $booking->trip->from_city }}
+                        </p>
+
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+
+                        <p class="text-sm text-gray-500">
+                            إلى
+                        </p>
+
+                        <p class="font-bold text-lg">
+                            {{ $booking->trip->to_city }}
+                        </p>
+
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4">
+
+                        <p class="text-sm text-gray-500">
+                            المقعد
+                        </p>
+
+                        <p class="font-bold text-lg">
+                            {{ $booking->seat_number }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            {{-- date --}}
+            <div class="grid grid-cols-2 gap-6">
+
+                <div class="bg-gray-50 rounded-lg p-4">
+
+                    <p class="text-sm text-gray-500">
+                        تاريخ الرحلة
+                    </p>
+
+                    <p class="font-semibold">
+                        {{ $booking->trip->trip_date }}
+                    </p>
+
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-4">
+
+                    <p class="text-sm text-gray-500">
+                        وقت الرحلة
+                    </p>
+
+                    <p class="font-semibold">
+                        {{ $booking->trip->trip_time }}
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            {{-- invoice --}}
+            <div class="border-t pt-6">
+
+                <h3 class="font-semibold mb-4">
+                    تفاصيل الفاتورة
+                </h3>
+
+                <div class="grid grid-cols-3 gap-6 text-center">
+
+                    <div>
+
+                        <p class="text-sm text-gray-500">
+                            السعر النهائي
+                        </p>
+
+                        <p class="font-bold text-lg">
+                            {{ $booking->invoice->total_amount }}
+                            {{ $booking->invoice->currency->code }}
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <p class="text-sm text-gray-500">
+                            المدفوع
+                        </p>
+
+                        <p class="font-bold text-green-600 text-lg">
+                            {{ $booking->invoice->paid_amount }}
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <p class="text-sm text-gray-500">
+                            المتبقي
+                        </p>
+
+                        <p class="font-bold text-red-600 text-lg">
+                            {{ $booking->invoice->remaining_amount }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            {{-- payments --}}
             @if($booking->invoice->payments->count())
 
-                <div class="border-t mt-6 pt-4">
+                <div class="border-t pt-6">
 
                     <h3 class="font-semibold mb-3">
-
                         سجل الدفعات
-
                     </h3>
 
-                    <table class="w-full text-sm">
+                    <table class="w-full text-sm border rounded-lg overflow-hidden">
 
-                        <thead>
+                        <thead class="bg-gray-100">
 
-                        <tr class="text-gray-500">
+                        <tr>
 
-                            <th class="text-left">المبلغ</th>
-
-                            <th class="text-left">العملة</th>
-
-                            <th class="text-left">الموظف</th>
-
-                            <th class="text-left">التاريخ</th>
+                            <th class="p-2 text-left">المبلغ</th>
+                            <th class="p-2 text-left">العملة</th>
+                            <th class="p-2 text-left">الموظف</th>
+                            <th class="p-2 text-left">التاريخ</th>
 
                         </tr>
 
@@ -303,29 +262,10 @@
 
                             <tr class="border-t">
 
-                                <td>
-
-                                    {{ $payment->amount }}
-
-                                </td>
-
-                                <td>
-
-                                    {{ $payment->currency->code }}
-
-                                </td>
-
-                                <td>
-
-                                    {{ $payment->employee->full_name }}
-
-                                </td>
-
-                                <td>
-
-                                    {{ $payment->created_at->format('Y-m-d') }}
-
-                                </td>
+                                <td class="p-2">{{ $payment->amount }}</td>
+                                <td class="p-2">{{ $payment->currency->code }}</td>
+                                <td class="p-2">{{ $payment->employee->full_name }}</td>
+                                <td class="p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
 
                             </tr>
 
@@ -341,32 +281,27 @@
 
 
 
-            {{-- الحالة --}}
-
-            <div class="border-t mt-6 pt-4 flex justify-between">
+            {{-- footer --}}
+            <div class="border-t pt-4 flex justify-between items-center">
 
                 <div>
 
-                    <p class="text-gray-500 text-sm">
-
+                    <p class="text-sm text-gray-500">
                         الحالة
-
                     </p>
 
                     <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
 
-               {{ $booking->status }}
+                    {{ $booking->status }}
 
-             </span>
+                </span>
 
                 </div>
 
                 <div>
 
-                    <p class="text-gray-500 text-sm">
-
+                    <p class="text-sm text-gray-500">
                         تاريخ الحجز
-
                     </p>
 
                     <p class="font-semibold">
@@ -377,13 +312,12 @@
 
                 </div>
 
-
             </div>
 
 
-           </div>
+        </div>
 
-          </div>
+    </div>
 
 @endsection
 
@@ -394,35 +328,25 @@
     @media print {
 
         body * {
-
             visibility:hidden;
-
         }
 
         .print-area, .print-area * {
-
             visibility:visible;
-
         }
 
         .print-area {
-
             position:absolute;
-
             left:0;
-
             top:0;
-
             width:100%;
-
             background:white;
-
+            box-shadow:none;
+            border:none;
         }
 
-        button{
-
+        .print\:hidden{
             display:none;
-
         }
 
     }
