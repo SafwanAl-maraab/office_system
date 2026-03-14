@@ -22,7 +22,14 @@ Route::middleware(['auth','role:admin'])->prefix('dashboard')->group(function ()
         ->name('settings.update');
 
 });
+use App\Http\Controllers\Frontend\DashboardController;
 
+Route::middleware(['auth'])->group(function(){
+
+    Route::get('/dashboard',[DashboardController::class,'index'])
+        ->name('dashboard');
+
+});
 
 Route::middleware(['auth'])
     ->prefix('dashboard')
@@ -316,7 +323,7 @@ Route::middleware(['auth'])
 //    return view('frontend.dashboard');
 //})->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/dashboard', [App\Http\Controllers\dashcontroller::class, 'dashboard'])->middleware(['auth', 'verified'])->name('dashboard');
+//Route::get('/dashboard', [App\Http\Controllers\dashcontroller::class, 'dashboard'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
