@@ -40,11 +40,20 @@
     <div class="h-[calc(100vh-4rem)] overflow-y-auto px-4 py-6 space-y-3">
 
         <!-- DASHBOARD -->
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:scale-[1.02] transition">
-            <span>🏠</span>
-            <span x-show="!collapsed" class="text-sm font-medium">الرئيسية</span>
-        </a>
+    <a href="{{ route('dashboard') }}"
+   class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ request()->routeIs('dashboard')
+        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
 
+    <span>🏠</span>
+
+    <span x-show="!collapsed" class="text-sm font-medium">
+        الرئيسية
+    </span>
+
+</a>
         <!-- VISAS MENU -->
 
         <!-- VISAS MENU -->
