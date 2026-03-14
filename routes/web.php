@@ -386,8 +386,8 @@ Route::middleware(['auth'])
     Route::post('/visas/{id}/add-payment', [VisaController::class,'storePayment'])
     ->name('visas.addPayment');
 
-    Route::post('/visas/{id}/change-status', [VisaController::class,'changeStatus'])
-    ->name('visas.changeStatus');
+    // Route::post('/visas/{id}/change-status', [VisaController::class,'changeStatus'])
+    // ->name('visas.changeStatus');
 
 //////
 Route::post('/visas/{id}/attach-trip-group',

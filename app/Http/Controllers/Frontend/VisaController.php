@@ -500,9 +500,10 @@ public function storePayment(Request $request, $id)
 public function changeStatus(Request $request, $id)
 {
     $request->validate([
-        'status' => 'required|in:pending,issued,cancelled',
-        'cancel_reason' => 'nullable|string|max:1000'
-    ]);
+    'status' => 'required|in:pending,issued,cancelled',
+    'cancel_reason' => 'nullable|string|max:1000',
+    'visa_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096'
+]);
 
     DB::beginTransaction();
 
@@ -517,6 +518,27 @@ public function changeStatus(Request $request, $id)
 
         // تحديث الحالة
         $visa->status = $request->status;
+if($request->hasFile('visa_file')){
+
+$file = $request->file('visa_file');
+
+$name = time().'_'.$file->getClientOriginalName();
+
+$file->storeAs('visas',$name,'public');
+
+$extension = $file->getClientOriginalExtension();
+
+if($extension == 'pdf'){
+
+$visa->document_file = 'visas/'.$name;
+
+}else{
+
+$visa->image_file = 'visas/'.$name;
+
+}
+
+}
 
         if ($request->status === 'cancelled') {
             $visa->cancel_reason = $request->cancel_reason;

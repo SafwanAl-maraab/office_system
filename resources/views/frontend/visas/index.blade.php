@@ -148,31 +148,29 @@
                     عرض
                 </a>
 
+<button
+onclick="openStatusModal({{ $visa->id }}, '{{ $visa->status }}')"
+class="group relative inline-flex items-center gap-2 px-4 py-2
+bg-gradient-to-r from-blue-600 to-blue-700
+hover:from-blue-700 hover:to-blue-800
+text-white text-sm font-medium
+rounded-2xl shadow-md hover:shadow-lg
+transition-all duration-300">
 
+<svg xmlns="http://www.w3.org/2000/svg"
+class="w-4 h-4 opacity-90 group-hover:rotate-6 transition"
+fill="none"
+viewBox="0 0 24 24"
+stroke="currentColor">
+<path stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="2"
+d="M9 5h6M9 9h6M9 13h6M9 17h6"/>
+</svg>
 
-              <button
-
-    onclick="openStatusModal()"
-    class="group relative inline-flex items-center gap-2 px-4 py-2
-           bg-gradient-to-r from-blue-600 to-blue-700
-           hover:from-blue-700 hover:to-blue-800
-           text-white text-sm font-medium
-           rounded-2xl shadow-md hover:shadow-lg
-           transition-all duration-300">
-
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="w-4 h-4 opacity-90 group-hover:rotate-6 transition"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor">
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5h6M9 9h6M9 13h6M9 17h6" />
-    </svg>
-
-    تغيير الحالة
+تغيير الحالة
 </button>
+
 
 <button
     onclick="openTripModal()"
@@ -226,52 +224,12 @@
 </div>
 
 
-<!-- STATUS MODAL -->
-<div id="statusModal"
-     class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-    <div class="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-xl">
-
-        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">
-            تغيير حالة التأشيرة
-        </h3>
-
-        <form method="POST" id="statusForm">
-            @csrf
-
-            <select name="status"
-                class="w-full border border-gray-300 dark:border-gray-700
-                       bg-white dark:bg-gray-800
-                       text-gray-800 dark:text-white
-                       rounded-xl px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-
-                <option value="pending">Pending</option>
-                <option value="issued">Issued</option>
-                <option value="cancelled">Cancelled</option>
-
-            </select>
-
-            <div class="flex justify-end gap-3">
-                <button type="button"
-                        onclick="closeStatusModal()"
-                        class="px-4 py-2 bg-gray-400 text-white rounded-lg">
-                    إلغاء
-                </button>
-
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                    حفظ
-                </button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-
 
 <!-- CREATE MODAL -->
 @include('frontend.visas.partials.create-modal')
+
+
+@include('frontend.visas.partials.change_state')
 
 
 @include('frontend.visas.partials.trip_group')
