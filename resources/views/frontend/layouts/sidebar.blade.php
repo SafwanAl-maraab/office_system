@@ -122,28 +122,6 @@
 </a>
 
 
-        <a href="{{ route('trips.index') }}"
-           class="block px-3 py-2 rounded-xl text-sm transition
-   {{ request()->routeIs('trips.*')
-        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
-        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-   }}">
-
-        الرحللات الخارجية
-
-        </a>
-
-
-        <a href="{{ route('dashboard.bookings.index') }}"
-           class="block px-3 py-2 rounded-xl text-sm transition
-   {{ request()->routeIs('bookings.*')
-        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
-        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-   }}">
-
-        الحجوزات
-        </a>
-
 
     </div>
 
@@ -214,31 +192,67 @@
 
         </div>
 
-        @php
-    $bookingsActive = request()->routeIs('bookings.*');
-@endphp
+        <div>
 
-{{--<a href="{{ route('bookings.index') }}"--}}
-{{--   class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200--}}
-{{--   {{ $bookingsActive--}}
-{{--        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'--}}
-{{--        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'--}}
-{{--   }}">--}}
+            @php
+                $isPassportsActive =
+                    request()->routeIs('dashboard.bookings.*') ||
+//                   request()->routeIs('frontend.trip.*') ||
+                    request()->routeIs('trips.*');
+            @endphp
 
-{{--    <!-- Active Indicator -->--}}
-{{--    @if($bookingsActive)--}}
-{{--        <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>--}}
-{{--    @endif--}}
+            <button
+                @click="openMenu === 'booking' ? openMenu=null : openMenu='booking'"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
+        {{ $isPassportsActive
+            ? 'bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}"
+            >
 
-{{--    <!-- Icon -->--}}
-{{--    <span class="text-lg">🎟</span>--}}
+                <div class="flex items-center gap-3">
+                    <span>🪪</span>
+                    <span x-show="!collapsed" class="text-sm font-medium">
+                ادارة الحجوزات
+            </span>
+                </div>
 
-{{--    <!-- Title -->--}}
-{{--    <span class="text-sm font-medium">--}}
-{{--        الحجوزات--}}
-{{--    </span>--}}
+                <span x-show="!collapsed">⌄</span>
 
-{{--</a>--}}
+            </button>
+
+            <div x-show="openMenu==='booking' || {{ $isPassportsActive ? 'true' : 'false' }}"
+                 class="mt-2 space-y-1 pr-8">
+                <!-- الحجوزات -->
+
+
+                <a href="{{ route('dashboard.bookings.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('dashboard.bookings.*')
+        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+   }}">
+
+                    الحجوزات
+                </a>
+
+
+
+                <a href="{{ route('trips.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('trips.*')
+        ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+   }}">
+
+                    الرحللات الخارجية
+
+                </a>
+
+
+
+
+            </div>>
+        </div>
         <!-- FINANCE -->
         @php
             $financeActive = request()->routeIs('dashboard.invoices.*')
@@ -412,7 +426,7 @@ $agentsActive = request()->routeIs('agents.*');
 
             <!-- Title -->
             <span class="text-sm font-medium">
-       أدارة الباصات
+       أدارة السائقين
     </span>
 
         </a>
