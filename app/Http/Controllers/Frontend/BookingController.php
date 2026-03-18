@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ use App\Models\Payment;
 
 
 use App\Models\BranchCashbox;
-
+use mysql_xdevapi\Exception;
 
 
 class BookingController extends Controller
@@ -432,14 +433,82 @@ class BookingController extends Controller
         ============================
         */
 
-        if($status == 'issued'){
+        $sta =$booking->status;
 
-// هنا يمكنك إضافة منطق مستقبلي
-// مثال:
-// إرسال إشعار
-// إنشاء ملف PDF
-// تسجيل عملية
+        if($status ===$sta){
 
+      return back()->with('error','  تغيير الحالة الى الحالة السابقة');
+}
+
+if($sta=== 'issued'  &&  in_array($status,['pending','confirmed'])){
+
+    return back()->with('error',' لايمكن تحويلها الى انتظار او مؤكد بعد اصدارها ');
+}
+
+        if($sta=== 'issued'  &&  $status==='cancelled'){
+
+
+
+
+            $IdAgent = AgentTransaction::where('booking_id',$booking)->get();
+
+
+            return back()->with('error','تم الالغاء وتم سحب المبلغ من الوكيل  ' .$IdAgent);
+
+
+        }
+
+        if ($status == 'issued') {
+
+            $branchId = auth()->user()->employee->branch_id;
+        $agent = $booking->trip->bus->agent_id;
+
+
+
+        try {
+
+            $agent_cost = $booking->trip->purchase_price;
+
+
+
+
+                AgentTransaction::create([
+
+                    'agent_id' => $agent,
+
+                    'branch_id' => $branchId,
+
+                    'booking_id' => $booking->id,
+
+                    'type' => 'booking_cost',
+
+                    'amount' => $agent_cost,
+
+                    'currency_id' => $booking->currency_id,
+
+                ]);
+
+            $booking->update([
+
+                'status'=>$status
+
+            ]);
+
+            return back()->with(
+
+                'success',
+                '  تم تغيير الحالة بنجاح وتسجيل  مبلغ للوكيل'
+.$agent_cost .$booking->currency->code
+
+            );
+            }
+
+               catch(\Exception $e){
+
+
+                   return back()->with('error',$e->getMessage());
+
+    }
         }
 
         /*
@@ -458,7 +527,7 @@ class BookingController extends Controller
 
             'success',
             'تم تغيير الحالة بنجاح'
-
+          . $status
         );
 
     }

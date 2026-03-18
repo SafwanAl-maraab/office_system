@@ -29,23 +29,23 @@
     <!-- SEARCH + FILTER -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow border border-gray-200 dark:border-gray-700">
 
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
 
             <!-- SEARCH -->
             <input type="text"
                    name="search"
                    value="{{ request('search') }}"
                    placeholder="🔎 البحث باسم العميل"
-                   class="w-full border border-gray-300 dark:border-gray-700 
-                          bg-white dark:bg-gray-800 
-                          text-gray-800 dark:text-white 
+                   class="w-full border border-gray-300 dark:border-gray-700
+                          bg-white dark:bg-gray-800
+                          text-gray-800 dark:text-white
                           rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
             <!-- FILTER -->
             <select name="visa_type"
-                class="w-full border border-gray-300 dark:border-gray-700 
-                       bg-white dark:bg-gray-800 
-                       text-gray-800 dark:text-white 
+                class="w-full border border-gray-300 dark:border-gray-700
+                       bg-white dark:bg-gray-800
+                       text-gray-800 dark:text-white
                        rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
                 <option value="">جميع الأنواع</option>
@@ -58,12 +58,25 @@
                 @endforeach
 
             </select>
+            <div>
+                <input type="date"
+                       name="date"
+                       value="{{ request('date') }}"
+                       class="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600
+                              bg-white dark:bg-gray-900
+                              text-gray-700 dark:text-gray-200">
+            </div>
 
             <!-- SUBMIT -->
             <button type="submit"
-                class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-xl transition">
+                class="px-4 py-2 bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500  hover:bg-gray-800 text-white rounded-xl transition">
                 تطبيق
             </button>
+
+            <a href="{{ route('visas.index') }}"
+               class="w-full text-center bg-green-700 hover:bg-green-900 text-white px-4 py-2 rounded-xl transition">
+                إعادة
+            </a>
 
         </form>
 
@@ -156,18 +169,18 @@
 
             </div>
 
-<div class="flex flex-wrap gap-3">
+<div class="flex flex-wrap gap-1">
             <!-- ACTIONS -->
-            <div class="p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 justify-between">
+            <div class="p-4  bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 justify-between">
 
                 <a href="{{ route('visas.show', $visa->id) }}"
-                   class="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition">
+                   class="px-3  py-1.5 text-sm  bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition">
                     عرض
                 </a>
 
 <button
 onclick="openStatusModal({{ $visa->id }}, '{{ $visa->status }}')"
-class="group relative inline-flex items-center gap-2 px-4 py-2
+class="group  relative inline-flex items-center gap-2 px-4 py-2
 bg-gradient-to-r from-blue-600 to-blue-700
 hover:from-blue-700 hover:to-blue-800
 text-white text-sm font-medium
@@ -189,28 +202,28 @@ d="M9 5h6M9 9h6M9 13h6M9 17h6"/>
 </button>
 
 
-<button
-    onclick="openTripModal()"
-    class="group relative inline-flex items-center gap-2 px-4 py-2
-           bg-gradient-to-r from-emerald-600 to-emerald-700
-           hover:from-emerald-700 hover:to-emerald-800
-           text-white text-sm font-medium
-           rounded-2xl shadow-md hover:shadow-lg
-           transition-all duration-300">
+{{--<button--}}
+{{--    onclick="openTripModal()"--}}
+{{--    class="group relative inline-flex items-center gap-2 px-4 py-2--}}
+{{--           bg-gradient-to-r from-emerald-600 to-emerald-700--}}
+{{--           hover:from-emerald-700 hover:to-emerald-800--}}
+{{--           text-white text-sm font-medium--}}
+{{--           rounded-2xl shadow-md hover:shadow-lg--}}
+{{--           transition-all duration-300">--}}
 
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="w-4 h-4 opacity-90 group-hover:rotate-6 transition"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor">
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 7h18M3 12h18M3 17h18" />
-    </svg>
+{{--    <svg xmlns="http://www.w3.org/2000/svg"--}}
+{{--         class="w-4 h-4 opacity-90 group-hover:rotate-6 transition"--}}
+{{--         fill="none"--}}
+{{--         viewBox="0 0 24 24"--}}
+{{--         stroke="currentColor">--}}
+{{--        <path stroke-linecap="round"--}}
+{{--              stroke-linejoin="round"--}}
+{{--              stroke-width="2"--}}
+{{--              d="M3 7h18M3 12h18M3 17h18" />--}}
+{{--    </svg>--}}
 
-    ربط بحملة
-</button>
+{{--    ربط بحملة--}}
+{{--</button>--}}
 
 </div>
 

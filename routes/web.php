@@ -101,10 +101,15 @@ Route::middleware(['auth'])
 
         //المدفوعات
 
+        Route::post(
+            'addInvoice',
+            [PaymentController::class, 'store']
+        )->name('addInvoice');
+
 
 
         Route::resource('payments', PaymentController::class)
-            ->only(['index','store','destroy']);
+          ->only(['index','store','destroy']);
 
 //        Route::post('payments/refund',
 //            [PaymentController::class,'refund'])
@@ -339,11 +344,11 @@ Route::middleware(['auth'])
                     [\App\Http\Controllers\Frontend\PaymentController::class, 'index']
                 )->name('index');
 
-                // إنشاء دفعة جديدة
-                Route::post(
-                    '/store',
-                    [\App\Http\Controllers\Frontend\PaymentController::class, 'store']
-                )->name('store');
+//                // إنشاء دفعة جديدة
+
+
+                Route::post('/invoice/add-payment', [VisaController::class,'store'])
+                    ->name('invoice.addPayment');
 
                 // عرض تفاصيل الدفعة
                 Route::get(

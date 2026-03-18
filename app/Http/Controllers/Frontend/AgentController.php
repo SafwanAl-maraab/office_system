@@ -158,7 +158,8 @@ $agent = Agent::findOrFail($id);
 
 $transactions = AgentTransaction::with([
 'currency:id,code,symbol',
-'visa:id,visa_number'
+'visa:id,visa_number',
+    'booking.trip.bus'
 ])
 ->where('agent_id',$agent->id)
 ->latest()

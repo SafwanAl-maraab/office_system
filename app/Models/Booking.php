@@ -29,7 +29,7 @@ class Booking extends Model
 
     public function trip()
     {
-        return $this->belongsTo(Trip::class);
+        return $this->belongsTo(Trip::class ,'trip_id');
     }
 
 
@@ -62,6 +62,10 @@ class Booking extends Model
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+    public function transactions()
+    {
+        return $this->belongsTo(AgentTransaction::class ,'booking_id');
     }
 
 

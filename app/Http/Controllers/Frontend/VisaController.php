@@ -40,6 +40,12 @@ class VisaController extends Controller
             $query->where('visa_type_id',$request->visa_type);
         }
 
+        // Date
+        if ($request->filled('date')) {
+            $query->where('created_at', 'like', "%$request->date%");
+        }
+
+
         $visas = $query->latest()->paginate(12);
 
         $visaTypes = VisaType::where('status',1)->get();
@@ -175,7 +181,7 @@ AgentTransaction::create([
             'status' => 'unpaid',
             'is_refund' => false
 
-            
+
         ]);
 
         /*
@@ -668,8 +674,6 @@ public function attachTripGroup(Request $request, $id)
         return back()->with('error',$e->getMessage());
     }
 }
-
-
 
 
 

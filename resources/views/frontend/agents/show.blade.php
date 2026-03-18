@@ -237,6 +237,13 @@ class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">
 دفعة
 </span>
 
+
+    @elseif($t->type == 'booking_cost')
+
+        <span class="text-green-600 font-semibold">
+            حجز سفر
+</span>
+
 @else
 
 <span class="text-yellow-600 font-semibold">
@@ -251,6 +258,9 @@ class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">
 
 @if($t->visa)
 {{ $t->visa->visa_number }}
+
+    @elseif($t->booking)
+            {{ ' حجز' .$t->booking->trip->bus->plate_number }}
 @else
 -
 @endif

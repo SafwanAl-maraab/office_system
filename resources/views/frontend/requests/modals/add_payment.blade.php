@@ -11,8 +11,8 @@
             تسجيل دفعة جديدة
         </h2>
 
-        <form method="POST"
-              action="{{ route('dashboard.payments.store', $request->invoice->id) }}"
+        <form method="post"
+              action="{{ route('dashboard.addInvoice' )}}"
               class="space-y-5">
 
             @csrf
@@ -21,6 +21,7 @@
                 <label class="block text-sm mb-1 text-gray-700 dark:text-gray-300">
                     المبلغ
                 </label>
+                <input type="hidden" value="{{$request->invoice->id}}" name="invId" >
                 <input type="number"
                        name="amount"
                        max="{{ $request->invoice->remaining_amount }}"

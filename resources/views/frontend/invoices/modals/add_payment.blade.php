@@ -24,9 +24,10 @@
             $currency = $invoice->currency->symbol ?? '';
         @endphp
 
-        <form method="POST"
-              action="{{ route('dashboard.payments.store', $invoice->id) }}"
-              class="space-y-6">
+        <form method="post"
+
+              action="{{ route('dashboard.addInvoice')}}"
+              class="space-y-6"
 
             @csrf
 
@@ -35,11 +36,14 @@
                 <label class="block text-sm mb-2 text-gray-700 dark:text-gray-300">
                     المبلغ
                 </label>
-
+                @csrf
+                <input type="hidden" value="{{$invoice->id}}" name="invId" >
                 <div class="relative">
+
                     <input type="number"
                            name="amount"
                            id="paymentAmount"
+
                            max="{{ $invoice->remaining_amount }}"
                            class="w-full px-4 py-3 rounded-xl border
                                   dark:bg-gray-900 dark:border-gray-600

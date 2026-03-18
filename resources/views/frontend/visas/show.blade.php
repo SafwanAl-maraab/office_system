@@ -11,16 +11,23 @@
                     تفاصيل التأشيرة
                 </h1>
                 <p class="text-gray-500 text-sm mt-1 flex items-center">
-                    <span class="opacity-70 ml-1">العميل:</span> 
+                    <span class="opacity-70 ml-1">العميل:</span>
                     <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $visa->client->full_name ?? '-' }}</span>
                 </p>
             </div>
 
             <div class="flex flex-wrap gap-3 items-center">
+
+
+                    <span class="tbg-gray-300 hover:bg-gray-700 text-black px-4 py-2 rounded-lg" >تاريخ الانشاء:</span>
+                    <span>{{ $visa->created_at->format('Y-m-d H:i') }}</span>
+
+
+
                 <span class="status-badge @if($visa->status == 'issued') status-success @elseif($visa->status == 'cancelled') status-danger @else status-warning @endif">
-                    {{ ucfirst($visa->status) }}
+                    {{ ucfirst($visa->status ) }}
                 </span>
-                
+
                 <div class="flex gap-2">
                     <button onclick="printVisaReport()" class="visa-btn btn-print">
                         <i class="fas fa-print ml-1"></i> طباعة التقرير
@@ -30,7 +37,12 @@
                         <i class="fab fa-whatsapp ml-1"></i> واتساب
                     </button>
                     @endif
+
                 </div>
+                <a href="{{ route('visas.index') }}"
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                    رجوع
+                </a>
             </div>
         </div>
     </div>
@@ -209,7 +221,7 @@
         </div>
 
         <div class="space-y-8">
-            
+
             @if($visa->agent)
             <div class="glass-card border-t-4 border-orange-400">
                 <h2 class="section-title mb-4">الوكيل المعتمد</h2>
@@ -419,7 +431,7 @@
     function sendVisaWhatsapp() {
         let fileName = "ملف التأشيرة";
         let fileUrl = "";
-        
+
         @if($visa->document_file)
             fileUrl = "{{ asset('storage/'.$visa->document_file) }}";
         @elseif($visa->image_file)

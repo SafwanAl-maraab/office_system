@@ -38,7 +38,7 @@ class Bus extends Model
 
     public function trips()
     {
-        return $this->hasMany(Trip::class);
+        return $this->hasMany(Trip::class ,'bus_id' );
     }
 
 

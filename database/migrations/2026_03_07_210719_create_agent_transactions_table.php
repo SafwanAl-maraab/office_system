@@ -27,6 +27,11 @@ return new class extends Migration
               ->constrained('visas')
               ->nullOnDelete();
 
+        $table->foreignId('booking_id')
+            ->nullable()
+            ->constrained('bookings')
+            ->nullOnDelete();
+
         $table->foreignId('agent_payment_id')
               ->nullable()
               ->constrained('agent_payments')
@@ -35,7 +40,8 @@ return new class extends Migration
         $table->enum('type', [
             'visa_cost',
             'payment',
-            'adjustment'
+            'adjustment',
+            'booking_cost'
         ]);
 
         $table->decimal('amount', 14, 2);

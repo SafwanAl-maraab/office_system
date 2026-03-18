@@ -39,11 +39,19 @@ class PaymentController extends Controller
         return view('frontend.payments.index', compact('payments','invoices'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request  )
     {
-        DB::transaction(function() use ($request){
 
-            $invoice = Invoice::findOrFail($request->invoice_id);
+        if(empty($request->invId)){
+
+            return back()->with('success','لم يتم تحديد فاتورة '
+
+            );
+        }
+
+        DB::transaction(function() use ($request ){
+
+            $invoice = Invoice::findOrFail($request->invId);
 
             $payment = Payment::create([
                 'branch_id'   => $invoice->branch_id,

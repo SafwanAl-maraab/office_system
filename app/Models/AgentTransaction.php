@@ -11,6 +11,7 @@ protected $fillable = [
 'agent_id',
 'branch_id',
 'visa_id',
+'booking_id',
 'agent_payment_id',
 'type',
 'amount',
@@ -23,7 +24,9 @@ protected $fillable = [
 |--------------------------------------------------------------------------
 */
 
-public function agent()
+
+
+    public function agent()
 {
 return $this->belongsTo(Agent::class);
 }
@@ -37,6 +40,7 @@ public function visa()
 {
 return $this->belongsTo(Visa::class);
 }
+
 
 public function payment()
 {
@@ -80,5 +84,12 @@ public function isCredit()
 {
 return $this->amount < 0;
 }
+
+
+    public function booking()
+    {
+        return $this->belongsTo(booking::class ,'booking_id');
+    }
+
 
 }
