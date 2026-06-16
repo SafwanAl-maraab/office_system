@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
-use App\Models\Agent;
 use App\Models\AgentPayment;
 use App\Models\AgentTransaction;
 use App\Models\BranchCashbox;

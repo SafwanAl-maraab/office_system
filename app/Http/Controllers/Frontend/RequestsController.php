@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\BranchCashbox;
+use App\Models\ClientBalanceLog;
+use App\Models\Payment;
 use App\Models\Request as RequestModel;
+use App\Models\RequestStatusHistory;
 use Illuminate\Http\Request;
 use App\Models\RequestType;
 use App\Models\Invoice;
@@ -163,104 +167,332 @@ class RequestsController extends Controller
 
     public function changeStatus(Request $request, $id)
     {
-        $branchId = auth()->user()->employee->branch_id;
-        $employeeId = auth()->user()->employee->id;
-
         $request->validate([
-            'new_status' => 'required|string',
-            'notes' => 'nullable|string'
+
+            'new_status'    => 'required|string',
+
+            'notes'         => 'nullable|string|max:1000',
+
+            'refund_method' => 'nullable|in:cash,balance'
+
         ]);
 
-        $order = \App\Models\Request::where('branch_id', $branchId)
-            ->findOrFail($id);
+        DB::beginTransaction();
 
-        // 🔒 منع التعديل بعد الإغلاق
-        if (in_array($order->status, ['delivered', 'cancelled', 'rejected'])) {
-            abort(403, 'لا يمكن تعديل هذا الطلب.');
-        }
+        try {
 
+            $order = RequestModel::findOrFail($id);
 
-        $allowedTransitions = [
+            $oldStatus = $order->status;
 
-            'new' => [
-                'under_review',
-                'cancelled'
-            ],
+            /*
+            |--------------------------------------------------------------------------
+            | منع نفس الحالة
+            |--------------------------------------------------------------------------
+            */
 
-            'under_review' => [
-                'preparing',
-                'rejected',
-                'cancelled',
-                'new' // رجوع للخلف
-            ],
+            if (
+                $oldStatus === $request->new_status
+            ) {
 
-            'preparing' => [
-                'sent_to_south',
-                'cancelled',
-                'under_review' // رجوع
-            ],
+                throw new \Exception(
+                    'لا يمكن اختيار نفس الحالة الحالية'
+                );
+            }
 
-            'sent_to_south' => [
-                'received_south',
-                'cancelled',
-                'preparing' // رجوع
-            ],
+            /*
+            |--------------------------------------------------------------------------
+            | الطلبات المنتهية
+            |--------------------------------------------------------------------------
+            */
 
-            'received_south' => [
-                'ready',
-                'cancelled'
-            ],
+            if (
+                in_array(
+                    $oldStatus,
+                    ['delivered','cancelled','rejected']
+                )
+            ) {
 
-            'ready' => [
-                'delivered',
-                'cancelled'
-            ],
+                throw new \Exception(
+                    'لا يمكن تعديل هذا الطلب'
+                );
+            }
 
-        ];
+            /*
+            |--------------------------------------------------------------------------
+            | الإلغاء
+            |--------------------------------------------------------------------------
+            */
 
-        $currentStatus = $order->status;
-        $newStatus = $request->new_status;
+            if (
+                $request->new_status === 'cancelled'
+            ) {
 
+                $invoice =
+                    Invoice::where(
+                        'reference_type',
+                        'request'
+                    )
+                        ->where(
+                            'reference_id',
+                            $order->id
+                        )
+                        ->first();
 
+                if ($invoice) {
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | يوجد مدفوعات
+                    |--------------------------------------------------------------------------
+                    */
 
-        if (!isset($allowedTransitions[$currentStatus]) ||
-            !in_array($newStatus, $allowedTransitions[$currentStatus])) {
+                    if (
+                        $invoice->paid_amount > 0
+                    ) {
 
-            abort(403, 'انتقال غير مسموح.');
-        }
+                        $paidAmount =
+                            $invoice->paid_amount;
 
-        // إذا إلغاء أو رفض يجب وجود سبب
-        if (in_array($newStatus, ['cancelled', 'rejected']) && empty($request->notes)) {
-            return back()->withErrors(['notes' => 'يجب إدخال سبب.']);
-        }
+                        /*
+                        |--------------------------------------------------------------------------
+                        | إنشاء فاتورة مسترجع
+                        |--------------------------------------------------------------------------
+                        */
 
-        if (
-            in_array($newStatus, ['ready', 'delivered']) &&
-            $order->invoice &&
-            $order->invoice->remaining_amount > 0
-        ) {
-            $request->notes .= ' | تم تغيير الحالة رغم وجود مبلغ متبقي';
-        }
+                        $refundInvoice =
+                            Invoice::create([
 
-        \DB::transaction(function () use ($order, $newStatus, $employeeId, $request) {
+                                'branch_id' =>
+                                    $invoice->branch_id,
 
-            \App\Models\RequestStatusHistory::create([
-                'request_id' => $order->id,
-                'old_status' => $order->status,
-                'new_status' => $newStatus,
-                'changed_by' => $employeeId,
-                'notes' => $request->notes,
-            ]);
+                                'client_id' =>
+                                    $invoice->client_id,
+
+                                'reference_type' =>
+                                    'refund',
+
+                                'reference_id' =>
+                                    $invoice->id,
+
+                                'total_amount' =>
+                                    $paidAmount,
+
+                                'paid_amount' =>
+                                    $paidAmount,
+
+                                'remaining_amount' =>
+                                    0,
+
+                                'currency_id' =>
+                                    $invoice->currency_id,
+
+                                'status' =>
+                                    'paid',
+
+                                'cost' =>
+                                    0,
+
+                                'is_refund' =>
+                                    true,
+
+                                'reversed_invoice_id' =>
+                                    $invoice->id
+
+                            ]);
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | إضافة لرصيد العميل
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if (
+                            $request->refund_method
+                            ===
+                            'balance'
+                        ) {
+
+                            ClientBalanceLog::create([
+
+                                'client_id' =>
+                                    $invoice->client_id,
+
+                                'currency_id' =>
+                                    $invoice->currency_id,
+
+                                'amount' =>
+                                    $paidAmount,
+
+                                'type' =>
+                                    'refund',
+
+                                'reference_type' =>
+                                    'invoice',
+
+                                'reference_id' =>
+                                    $refundInvoice->id,
+
+                                'notes' =>
+                                    'استرجاع طلب ملغي',
+
+                                'created_by' =>
+                                    auth()->user()
+                                        ->employee
+                                        ->id
+
+                            ]);
+                        }
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | استرجاع نقدي
+                        |--------------------------------------------------------------------------
+                        */
+
+                        else {
+
+                            Payment::create([
+
+                                'branch_id' =>
+                                    $invoice->branch_id,
+
+                                'client_id' =>
+                                    $invoice->client_id,
+
+                                'invoice_id' =>
+                                    $refundInvoice->id,
+
+                                'amount' =>
+                                    $paidAmount,
+
+                                'currency_id' =>
+                                    $invoice->currency_id,
+
+                                'payment_method' =>
+                                    'refund',
+
+                                'created_by' =>
+                                    auth()->user()
+                                        ->employee
+                                        ->id
+
+                            ]);
+
+                            $cashbox =
+                                BranchCashbox::where(
+                                    'branch_id',
+                                    $invoice->branch_id
+                                )
+                                    ->where(
+                                        'currency_id',
+                                        $invoice->currency_id
+                                    )
+                                    ->first();
+
+                            if (!$cashbox) {
+
+                                throw new \Exception(
+                                    'الخزنة غير موجودة'
+                                );
+                            }
+
+                            if (
+                                $cashbox->balance
+                                <
+                                $paidAmount
+                            ) {
+
+                                throw new \Exception(
+                                    'رصيد الخزنة غير كاف'
+                                );
+                            }
+
+                            $cashbox->decrement(
+                                'balance',
+                                $paidAmount
+                            );
+                        }
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | إلغاء الفاتورة الأصلية
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $invoice->update([
+
+                        'status' =>
+                            'cancelled',
+
+                        'paid_amount' =>
+                            0,
+
+                        'remaining_amount' =>
+                            0
+
+                    ]);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | تحديث الطلب
+            |--------------------------------------------------------------------------
+            */
 
             $order->update([
-                'status' => $newStatus
+
+                'status' =>
+                    $request->new_status
+
             ]);
-        });
 
-        return redirect()->back()->with('success', 'تم تغيير الحالة بنجاح.');
+            /*
+            |--------------------------------------------------------------------------
+            | تسجيل التاريخ
+            |--------------------------------------------------------------------------
+            */
+
+            RequestStatusHistory::create([
+
+                'request_id' =>
+                    $order->id,
+
+                'old_status' =>
+                    $oldStatus,
+
+                'new_status' =>
+                    $request->new_status,
+
+                'changed_by' =>
+                    auth()->user()
+                        ->employee
+                        ->id,
+
+                'notes' =>
+                    $request->notes
+
+            ]);
+
+            DB::commit();
+
+            return back()->with(
+                'success',
+                'تم تغيير الحالة بنجاح'
+            );
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with(
+                'error',
+                $e->getMessage()
+            );
+        }
     }
-
 
     public function update(Request $request, $id)
     {
@@ -272,49 +504,54 @@ class RequestsController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $order = \App\Models\Request::with('invoice')
-            ->where('branch_id', $branchId)
-            ->findOrFail($id);
+        try {
+            $order = \App\Models\Request::with('invoice')
+                ->where('branch_id', $branchId)
+                ->findOrFail($id);
 
-        // 🔒 منع التعديل بعد الإغلاق
-        if (in_array($order->status, ['delivered', 'cancelled', 'rejected'])) {
-            abort(403, 'لا يمكن تعديل هذا الطلب.');
-        }
-
-        // 🔒 منع تغيير النوع إذا هناك دفعات
-        if ($order->invoice && $order->invoice->paid_amount > 0) {
-            if ($order->request_type_id != $request->request_type_id) {
-                abort(403, 'لا يمكن تغيير نوع الطلب بعد تسجيل دفعات.');
+            // 🔒 منع التعديل بعد الإغلاق برمي Exception
+            if (in_array($order->status, ['delivered', 'cancelled', 'rejected'])) {
+                throw new \Exception('لا يمكن تعديل هذا الطلب لأنه مغلق أو منتهي.');
             }
-        }
 
-        $requestType = \App\Models\RequestType::where('id', $request->request_type_id)
-            ->where('branch_id', $branchId)
-            ->firstOrFail();
+            // 🔒 منع تغيير النوع إذا هناك دفعات برمي Exception
+            if ($order->invoice && $order->invoice->paid_amount > 0) {
+                if ($order->request_type_id != $request->request_type_id) {
+                    throw new \Exception('لا يمكن تغيير نوع الطلب بعد تسجيل دفعات مالية على الفاتورة.');
+                }
+            }
 
-        \DB::transaction(function () use ($order, $request, $requestType) {
+            $requestType = \App\Models\RequestType::where('id', $request->request_type_id)
+                ->where('branch_id', $branchId)
+                ->firstOrFail();
 
-            $order->update([
-                'client_id' => $request->client_id,
-                'request_type_id' => $requestType->id,
-                'notes' => $request->notes,
-            ]);
+            \DB::transaction(function () use ($order, $request, $requestType) {
 
-            // تحديث الفاتورة فقط إذا لم توجد دفعات
-            if ($order->invoice && $order->invoice->paid_amount == 0) {
-
-                $order->invoice->update([
-                    'total_amount' => $requestType->price,
-                    'remaining_amount' => $requestType->price,
-                    'currency_id' => $requestType->currency_id,
+                $order->update([
+                    'client_id' => $request->client_id,
+                    'request_type_id' => $requestType->id,
+                    'notes' => $request->notes,
                 ]);
-            }
 
-        });
+                // تحديث الفاتورة فقط إذا لم توجد دفعات
+                if ($order->invoice && $order->invoice->paid_amount == 0) {
+                    $order->invoice->update([
+                        'total_amount' => $requestType->price,
+                        'remaining_amount' => $requestType->price,
+                        'currency_id' => $requestType->currency_id,
+                    ]);
+                }
 
-        return redirect()
-            ->route('dashboard.requests.index')
-            ->with('success', 'تم تحديث الطلب بنجاح.');
+            });
+
+            return redirect()
+                ->route('dashboard.requests.index')
+                ->with('success', 'تم تحديث الطلب بنجاح.');
+
+        } catch (\Exception $e) {
+            // في حال حدوث أي Exception، نرجع للخلف ونعرض نص الخطأ المكتوب فوق
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function destroy($id)

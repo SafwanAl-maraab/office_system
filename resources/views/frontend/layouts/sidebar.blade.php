@@ -322,6 +322,30 @@
 
                 </a>
 
+                <a href="{{ route('client-vouchers.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('clients.*')
+        ? 'bg-blue-600 text-white'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+                💳
+
+                    <span>
+        سندات العملاء
+    </span>
+
+                </a>
+
+                <a href="{{ route('exchange-rates.index') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-blue-50 dark:hover:bg-gray-800">
+
+                    💱
+
+                    <span>
+        أسعار الصرف
+    </span>
+
+                </a>
 
             </div>
 
@@ -433,16 +457,123 @@ $agentsActive = request()->routeIs('agents.*');
 
 
         <!-- BUSES -->
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+
+        @php
+            $busesActive = request()->routeIs('buses.*');
+        @endphp
+
+        <a href="{{ route('buses.index') }}"
+           class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+   {{ $busesActive
+        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+   }}">
+
+            <!-- Active Indicator -->
+            @if($busesActive)
+                <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>
+            @endif
+
+            <!-- Icon -->
             <span>🚌</span>
-            <span x-show="!collapsed" class="text-sm">الباصات</span>
+            <span class="text-lg">
+</span>
+
+            <!-- Title -->
+            <span class="text-sm font-medium">
+        الباصات
+    </span>
+
         </a>
 
-        <!-- DRIVERS -->
-        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            <span>👨‍✈️</span>
-            <span x-show="!collapsed" class="text-sm">السائقين</span>
+
+
+
+        @php
+            $driversActive = request()->routeIs('drivers.*');
+        @endphp
+
+        <a href="{{ route('drivers.index') }}"
+           class="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200
+   {{ $driversActive
+        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+   }}">
+
+            <!-- Active Indicator -->
+            @if($driversActive)
+                <span class="absolute right-0 top-2 bottom-2 w-1 bg-blue-600 rounded-l-full"></span>
+            @endif
+
+            <!-- Icon -->
+            <span class="text-lg">         👨‍✈️
+</span>
+
+            <!-- Title -->
+            <span class="text-sm font-medium">
+        السائقين
+    </span>
+
         </a>
+
+
+
+        {{--        Account show--}}
+
+        <div>
+
+            @php
+                $AccountActive =
+                    request()->routeIs('dashboard.requests.*') ;
+//                   request()->routeIs('dashboard.travels.*') ||
+//                    request()->routeIs('dashboard.request-types.*');
+            @endphp
+
+            <button
+                @click="openMenu === 'Account' ? openMenu=null : openMenu='Account'"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
+        {{ $AccountActive
+            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}"
+            >
+
+                <div class="flex items-center gap-3">
+                    <span>🪪</span>
+                    <span x-show="!collapsed" class="text-sm font-medium">
+                         كشف حسابات
+            </span>
+                </div>
+
+                <span x-show="!collapsed">⌄</span>
+
+            </button>
+
+            <div x-show="openMenu==='Account' || {{ $AccountActive ? 'true' : 'false' }}"
+                 class="mt-2 space-y-1 pr-8">
+                <!-- الحجوزات -->
+
+
+                <!--  Client -->
+                <a href="#"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('dashboard.requests.*')
+                ? 'bg-blue-500 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                    كشف حساب عميل
+                </a>
+
+
+
+
+
+
+
+        </div>
+    </div>
+
+
+
+
 
         <!-- SETTINGS -->
 

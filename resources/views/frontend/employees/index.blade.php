@@ -148,7 +148,7 @@
     </div>
 
 
-    @include('frontend.clients.partials.modal')
+    @include('frontend.employees.partials.modal')
     <!-- DELETE CONFIRM MODAL -->
     <div id="deleteModal"
          class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4">

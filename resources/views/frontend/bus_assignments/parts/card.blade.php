@@ -56,16 +56,51 @@ bg-red-100 text-red-600
     @endphp
 
 
-    @if($trip)
+    @if($record->bus->currentTrip)
 
-        <div class="bg-blue-50 dark:bg-blue-900 p-2 rounded text-sm">
+        @if($record->bus->currentTrip->status == 'scheduled')
 
-            🚍 {{ $trip->from_city }} → {{ $trip->to_city }}
+            <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 p-2 rounded text-sm">
+
+                🟡 رحلة مجدولة
+
+                <div class="mt-1">
+
+                    {{ $record->bus->currentTrip->from_city }}
+                    →
+                    {{ $record->bus->currentTrip->to_city }}
+
+                </div>
+
+            </div>
+
+        @elseif($record->bus->currentTrip->status == 'in_progress')
+
+            <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-2 rounded text-sm">
+
+                🟢 رحلة جارية
+
+                <div class="mt-1">
+
+                    {{ $record->bus->currentTrip->from_city }}
+                    →
+                    {{ $record->bus->currentTrip->to_city }}
+
+                </div>
+
+            </div>
+
+        @endif
+
+    @else
+
+        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 rounded text-sm">
+
+            ⚪ الحافلة متاحة حالياً
 
         </div>
 
     @endif
-
 
     <div class="flex justify-between pt-3 text-sm">
 

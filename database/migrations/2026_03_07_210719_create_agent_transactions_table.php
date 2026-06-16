@@ -41,7 +41,9 @@ return new class extends Migration
             'visa_cost',
             'payment',
             'adjustment',
-            'booking_cost'
+            'booking_cost',
+          //  'booking_cost_reversal',
+              // 'visa_cost_reversal'
         ]);
 
         $table->decimal('amount', 14, 2);

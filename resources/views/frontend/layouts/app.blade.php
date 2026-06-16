@@ -10,6 +10,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="csrf-token"
+        content="{{ csrf_token() }}">
+
     <title>{{ $info->office_name ?? 'Office System' }}</title>
 
     @vite(['resources/css/app.css','resources/js/app.js'])
@@ -232,5 +236,10 @@
     }
 </script>
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+
+
+
+
 </body>
 </html>

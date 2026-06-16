@@ -57,7 +57,7 @@ class Invoice extends Model
 
     public function booking()
     {
-        return $this->belongsTo(\App\Models\Booking::class);
+        return $this->belongsTo(\App\Models\Booking::class, 'reference_id');
     }
 
     public function request()
@@ -69,6 +69,21 @@ class Invoice extends Model
     {
         return $this->belongsTo(\App\Models\Visa::class ,'reference_id' );
     }
+
+    public function allocations()
+    {
+        return $this->hasMany(
+            VoucherAllocation::class
+        );
+    }
+
+    public function exchangeAllocations()
+    {
+        return $this->hasMany(
+            CurrencyExchangeAllocation::class
+        );
+    }
+
 
 
 }

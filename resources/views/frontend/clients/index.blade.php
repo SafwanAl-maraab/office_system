@@ -86,7 +86,12 @@
                                 class="px-4 py-2 text-sm rounded-xl bg-yellow-100 text-yellow-600 hover:scale-105 transition">
                             تعديل
                         </button>
+                        <a href="{{ route('clients.statement',$client->id) }}"
+                           class="px-4 py-2 text-sm rounded-xl bg-blue-100 text-blue-600 hover:scale-105 transition">
 
+                            كشف الحساب
+
+                        </a>
                         <button type="button"
                                 data-delete-client
                                 data-id="{{ $client->id }}"

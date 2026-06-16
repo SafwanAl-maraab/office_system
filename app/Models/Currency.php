@@ -34,4 +34,11 @@ class Currency extends Model
         return $this->hasMany(Booking::class);
     }
 
+
+    public function balanceLogs()
+    {
+        return $this->hasMany(
+            ClientBalanceLog::class
+        );
+    }
 }

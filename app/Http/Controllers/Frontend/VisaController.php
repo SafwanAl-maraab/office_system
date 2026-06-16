@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientBalanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -101,6 +102,20 @@ if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
         | إنشاء التأشيرة
         |--------------------------------------------------------------------------
         */
+        $totalCost =
+            ($request->cost_price ?? 0)
+            +
+            ($request->agent_cost ?? 0);
+
+        if(
+            $request->sale_price
+            <
+            $totalCost
+        ){
+            throw new \Exception(
+                'سعر البيع أقل من إجمالي التكلفة'
+            );
+        }
 
         $visaNumber = 'V-' . date('Y') . '-' . str_pad(Visa::count()+1,5,'0',STR_PAD_LEFT);
        $visa = Visa::create([
@@ -236,18 +251,18 @@ AgentTransaction::create([
         | تسجيل دين الوكيل مباشرة
         |--------------------------------------------------------------------------
         */
-       if ($request->agent_id && $request->agent_cost) {
-
-    AgentTransaction::create([
-        'agent_id' => $request->agent_id,
-        'branch_id' => $branchId,
-        'visa_id' => $visa->id,
-        'type' => 'visa_cost',
-        'amount' => $request->agent_cost,
-        'currency_id' => $request->currency_id
-    ]);
-
-}
+//       if ($request->agent_id && $request->agent_cost) {
+//
+//    AgentTransaction::create([
+//        'agent_id' => $request->agent_id,
+//        'branch_id' => $branchId,
+//        'visa_id' => $visa->id,
+//        'type' => 'visa_cost',
+//        'amount' => $request->agent_cost,
+//        'currency_id' => $request->currency_id
+//    ]);
+//
+//}
 
         /*
         |--------------------------------------------------------------------------
@@ -503,87 +518,407 @@ public function storePayment(Request $request, $id)
     }
 }
 
-public function changeStatus(Request $request, $id)
-{
-    $request->validate([
+    public function changeStatus(Request $request, $id)
+    {
+        $request->validate([
+
+
     'status' => 'required|in:pending,issued,cancelled',
+
     'cancel_reason' => 'nullable|string|max:1000',
+
+    'refund_method' => 'nullable|in:cash,balance',
+
     'visa_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096'
+
 ]);
 
-    DB::beginTransaction();
+DB::beginTransaction();
 
-    try {
+try {
 
-        $visa = Visa::findOrFail($id);
-        $oldStatus = $visa->status;
+    $visa = Visa::findOrFail($id);
 
-        if ($oldStatus === $request->status) {
-            throw new \Exception('الحالة الحالية هي نفسها المختارة');
+    $oldStatus = $visa->status;
+
+    if ($oldStatus === $request->status) {
+
+        throw new \Exception(
+            'الحالة الحالية هي نفسها المختارة'
+        );
+    }
+
+
+    /*
+ |--------------------------------------------------------------------------
+ | لا يمكن إعادة تفعيل تأشيرة ملغية
+ |--------------------------------------------------------------------------
+ */
+
+    if(
+        $oldStatus === 'cancelled'
+        &&
+        in_array(
+            $request->status,
+            ['pending','issued']
+        )
+    ){
+
+        throw new \Exception(
+            'لا يمكن إعادة تفعيل تأشيرة ملغية'        );
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | رفع ملف التأشيرة
+    |--------------------------------------------------------------------------
+    */
+
+    if($request->hasFile('visa_file')){
+
+        $file = $request->file('visa_file');
+
+        $name =
+            time().'_'.
+            $file->getClientOriginalName();
+
+        $file->storeAs(
+            'visas',
+            $name,
+            'public'
+        );
+
+        $extension =
+            strtolower(
+                $file->getClientOriginalExtension()
+            );
+
+        if($extension === 'pdf'){
+
+            $visa->document_file =
+                'visas/'.$name;
+
+        }else{
+
+            $visa->image_file =
+                'visas/'.$name;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | الإلغاء
+    |--------------------------------------------------------------------------
+    */
+
+    if($request->status === 'cancelled'){
+
+        $visa->cancel_reason =
+            $request->cancel_reason;
+
+        $invoice =
+            Invoice::where(
+                'reference_type',
+                'visa'
+            )
+            ->where(
+                'reference_id',
+                $visa->id
+            )
+            ->first();
+
+        if($invoice){
+
+            /*
+            |--------------------------------------------------------------------------
+            | يوجد مدفوعات
+            |--------------------------------------------------------------------------
+            */
+
+            if($invoice->paid_amount > 0){
+
+                $paidAmount =
+                    $invoice->paid_amount;
+
+                $refundInvoice =
+                    Invoice::create([
+
+                        'branch_id' =>
+                            $invoice->branch_id,
+
+                        'client_id' =>
+                            $invoice->client_id,
+
+                        'reference_type' =>
+                            'refund',
+
+                        'reference_id' =>
+                            $invoice->id,
+
+                        'total_amount' =>
+                            $paidAmount,
+
+                        'paid_amount' =>
+                            $paidAmount,
+
+                        'remaining_amount' =>
+                            0,
+
+                        'currency_id' =>
+                            $invoice->currency_id,
+
+                        'status' =>
+                            'paid',
+
+                        'cost' =>
+                            0,
+
+                        'is_refund' =>
+                            true,
+
+                        'reversed_invoice_id' =>
+                            $invoice->id
+
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | إضافة لرصيد العميل
+                |--------------------------------------------------------------------------
+                */
+
+                if(
+                    $request->refund_method
+                    ===
+                    'balance'
+                ){
+
+                    ClientBalanceLog::create([
+
+                        'client_id' =>
+                            $invoice->client_id,
+
+                        'currency_id' =>
+                            $invoice->currency_id,
+
+                        'amount' =>
+                            $paidAmount,
+
+                        'type' =>
+                            'refund',
+
+                        'reference_type' =>
+                            'invoice',
+
+                        'reference_id' =>
+                            $refundInvoice->id,
+
+                        'notes' =>
+                            'استرجاع تأشيرة ملغية',
+
+                        'created_by' =>
+                            auth()->user()
+                                ->employee
+                                ->id
+
+                    ]);
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | تسليم نقدي
+                |--------------------------------------------------------------------------
+                */
+
+                else{
+
+                    Payment::create([
+
+                        'branch_id' =>
+                            $invoice->branch_id,
+
+                        'client_id' =>
+                            $invoice->client_id,
+
+                        'invoice_id' =>
+                            $refundInvoice->id,
+
+                        'amount' =>
+                            $paidAmount,
+
+                        'currency_id' =>
+                            $invoice->currency_id,
+
+                        'payment_method' =>
+                            'refund',
+
+                        'created_by' =>
+                            auth()->user()
+                                ->employee
+                                ->id
+
+                    ]);
+
+                    $cashbox =
+                        BranchCashbox::where(
+                            'branch_id',
+                            $invoice->branch_id
+                        )
+                        ->where(
+                            'currency_id',
+                            $invoice->currency_id
+                        )
+                        ->first();
+
+                    if(!$cashbox){
+
+                        throw new \Exception(
+                            'الخزنة غير موجودة'
+                        );
+                    }
+
+                    if(
+                        $cashbox->balance
+                        <
+                        $paidAmount
+                    ){
+
+                        throw new \Exception(
+                            'رصيد الخزنة غير كاف'
+                        );
+                    }
+
+                    $cashbox->decrement(
+                        'balance',
+                        $paidAmount
+                    );
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | إلغاء الفاتورة الأصلية
+            |--------------------------------------------------------------------------
+            */
+
+            $invoice->update([
+
+                'status' =>
+                    'cancelled',
+
+                'paid_amount' =>
+                    0,
+
+                'remaining_amount' =>
+                    0
+
+            ]);
         }
 
-        // تحديث الحالة
-        $visa->status = $request->status;
-if($request->hasFile('visa_file')){
+        /*
+        |--------------------------------------------------------------------------
+        | عكس تكلفة الوكيل
+        |--------------------------------------------------------------------------
+        */
+        $agentTransactionExists =
+            AgentTransaction::where(
+                'visa_id',
+                $visa->id
+            )
+                ->where(
+                    'type',
+                    'visa_cost'
+                )
+                ->exists();
 
-$file = $request->file('visa_file');
+        if(
+            $agentTransactionExists
+            &&
+            $visa->agent_cost > 0
+        ){
+            AgentTransaction::create([
 
-$name = time().'_'.$file->getClientOriginalName();
 
-$file->storeAs('visas',$name,'public');
+            'agent_id' =>
+                    $visa->agent_id,
 
-$extension = $file->getClientOriginalExtension();
+                'branch_id' =>
+                    $visa->branch_id,
 
-if($extension == 'pdf'){
+                'visa_id' =>
+                    $visa->id,
 
-$visa->document_file = 'visas/'.$name;
+                'type' =>
+                    'adjustment',
 
-}else{
+                'amount' =>
+                    -$visa->agent_cost,
 
-$visa->image_file = 'visas/'.$name;
+                'currency_id' =>
+                    $visa->currency_id
 
-}
-
-}
-
-        if ($request->status === 'cancelled') {
-            $visa->cancel_reason = $request->cancel_reason;
+            ]);
         }
-        if ($request->status === 'cancelled' && $visa->agent_id && $visa->agent_cost) {
+    }
 
-    AgentTransaction::create([
-        'agent_id' => $visa->agent_id,
-        'branch_id' => $visa->branch_id,
-        'visa_id' => $visa->id,
-        'type' => 'adjustment',
-        'amount' => -$visa->agent_cost,
-        'currency_id' => $visa->currency_id
+    /*
+    |--------------------------------------------------------------------------
+    | تحديث الحالة
+    |--------------------------------------------------------------------------
+    */
+
+    $visa->status =
+        $request->status;
+
+    $visa->save();
+
+    /*
+    |--------------------------------------------------------------------------
+    | التاريخ
+    |--------------------------------------------------------------------------
+    */
+
+    VisaStatusHistory::create([
+
+        'visa_id' =>
+            $visa->id,
+
+        'old_status' =>
+            $oldStatus,
+
+        'new_status' =>
+            $request->status,
+
+        'changed_by' =>
+            auth()->user()
+                ->employee
+                ->id,
+
+        'notes' =>
+            $request->status === 'cancelled'
+            ? 'تم الإلغاء: '.$request->cancel_reason
+            : 'تم تغيير الحالة'
+
     ]);
 
+    DB::commit();
+
+    return back()->with(
+        'success',
+        'تم تغيير الحالة بنجاح'
+    );
+
+} catch (\Exception $e) {
+
+    DB::rollBack();
+
+    return back()->with(
+        'error',
+        $e->getMessage()
+    );
 }
 
-        $visa->save();
 
-        // تسجيل في جدول التاريخ
-        VisaStatusHistory::create([
-            'visa_id' => $visa->id,
-            'old_status' => $oldStatus,
-            'new_status' => $request->status,
-            'changed_by' => auth()->user()->employee->id,
-            'notes' => $request->status === 'cancelled'
-                ? 'تم الإلغاء: '.$request->cancel_reason
-                : 'تم تغيير الحالة'
-        ]);
-
-        DB::commit();
-
-        return back()->with('success','تم تغيير الحالة بنجاح');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-        return back()->with('error',$e->getMessage());
-    }
 }
 
 

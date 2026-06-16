@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientBalanceLog;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\BranchCashbox;
@@ -182,6 +183,290 @@ class InvoiceController extends Controller
         });
 
         return back()->with('success','تم إنشاء فاتورة مسترجع بنجاح');
+    }
+
+
+    public function cancelOperation(Request $request, Invoice $invoice)
+    {
+        $request->validate([
+
+            'refund_method' =>
+
+                'required|in:cash,balance'
+
+        ]);
+
+        DB::beginTransaction();
+
+        try{
+
+            /*
+            |--------------------------------------------------------------------------
+            | المبلغ المدفوع
+            |--------------------------------------------------------------------------
+            */
+
+            $paidAmount =
+                $invoice->paid_amount;
+
+            /*
+            |--------------------------------------------------------------------------
+            | إنشاء فاتورة مسترجع كاملة
+            |--------------------------------------------------------------------------
+            */
+
+            $refundInvoice =
+                Invoice::create([
+
+                    'branch_id' =>
+                        $invoice->branch_id,
+
+                    'client_id' =>
+                        $invoice->client_id,
+
+                    'reference_type' =>
+                        'refund',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'total_amount' =>
+                        $paidAmount,
+
+                    'paid_amount' =>
+                        $paidAmount,
+
+                    'remaining_amount' =>
+                        0,
+
+                    'currency_id' =>
+                        $invoice->currency_id,
+
+                    'status' =>
+                        'paid',
+
+                    'cost' =>
+                        0,
+
+                    'is_refund' =>
+                        true,
+
+                    'reversed_invoice_id' =>
+                        $invoice->id
+
+                ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | استرجاع نقدي
+            |--------------------------------------------------------------------------
+            */
+
+            if(
+                $request->refund_method
+                ===
+                'cash'
+            ){
+
+                Payment::create([
+
+                    'branch_id' =>
+                        $invoice->branch_id,
+
+                    'client_id' =>
+                        $invoice->client_id,
+
+                    'invoice_id' =>
+                        $refundInvoice->id,
+
+                    'amount' =>
+                        $paidAmount,
+
+                    'currency_id' =>
+                        $invoice->currency_id,
+
+                    'payment_method' =>
+                        'refund',
+
+                    'created_by' =>
+                        auth()->user()
+                            ->employee
+                            ->id
+
+                ]);
+
+                $cashbox =
+                    BranchCashbox::where(
+                        'branch_id',
+                        $invoice->branch_id
+                    )
+                        ->where(
+                            'currency_id',
+                            $invoice->currency_id
+                        )
+                        ->first();
+
+                if(
+                    !$cashbox
+                ){
+                    throw new \Exception(
+                        'الخزنة غير موجودة'
+                    );
+                }
+
+                if(
+                    $cashbox->balance
+                    <
+                    $paidAmount
+                ){
+                    throw new \Exception(
+                        'رصيد الخزنة غير كافٍ'
+                    );
+                }
+
+                $cashbox->decrement(
+                    'balance',
+                    $paidAmount
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | تحويل لرصيد العميل
+            |--------------------------------------------------------------------------
+            */
+
+            else{
+
+                ClientBalanceLog::create([
+
+                    'client_id' =>
+                        $invoice->client_id,
+
+                    'currency_id' =>
+                        $invoice->currency_id,
+
+                    'amount' =>
+                        $paidAmount,
+
+                    'type' =>
+                        'refund',
+
+                    'reference_type' =>
+                        'invoice',
+
+                    'reference_id' =>
+                        $refundInvoice->id,
+
+                    'notes' =>
+                        'استرجاع ناتج عن إلغاء العملية',
+
+                    'created_by' =>
+                        auth()->user()
+                            ->employee
+                            ->id
+
+                ]);
+            }
+
+
+            /*
+|--------------------------------------------------------------------------
+| إلغاء العملية الأصلية
+|--------------------------------------------------------------------------
+*/
+
+            if(
+                $invoice->reference_type
+                ===
+                'booking'
+            ){
+                Booking::where(
+                    'id',
+                    $invoice->reference_id
+                )->update([
+
+                    'status' =>
+                        'cancelled'
+
+                ]);
+            }
+
+            elseif(
+                $invoice->reference_type
+                ===
+                'visa'
+            ){
+                Visa::where(
+                    'id',
+                    $invoice->reference_id
+                )->update([
+
+                    'status' =>
+                        'cancelled'
+
+                ]);
+            }
+
+            elseif(
+                $invoice->reference_type
+                ===
+                'request'
+            ){
+                \App\Models\Request::where(
+                    'id',
+                    $invoice->reference_id
+                )->update([
+
+                    'status' =>
+                        'cancelled'
+
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | إلغاء الفاتورة
+            |--------------------------------------------------------------------------
+            */
+
+            $invoice->update([
+
+                'status' =>
+                    'cancelled',
+
+                'paid_amount' =>
+                    0,
+
+                'remaining_amount' =>
+                    0
+
+            ]);
+
+            DB::commit();
+
+            return back()->with(
+
+                'success',
+
+                'تم إلغاء العملية بنجاح'
+
+            );
+
+
+
+        }catch(\Exception $e){
+
+            DB::rollBack();
+
+            return back()->with(
+
+                'error',
+
+                $e->getMessage()
+
+            );
+        }
     }
 
 
