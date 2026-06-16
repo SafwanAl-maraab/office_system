@@ -21,6 +21,7 @@ class BusAssignmentController extends Controller
 
         $records = BusDriver::with([
             'bus.agent',
+            'bus.currentTrip',
             'driver'
         ])
 
@@ -83,7 +84,19 @@ class BusAssignmentController extends Controller
 
         ]);
 
+        $exists = BusDriver::where('bus_id', $request->bus_id)
+            ->where('driver_id', $request->driver_id)
+            ->exists();
 
+        if ($exists) {
+
+            return back()->with(
+                'error',
+                'هذا السائق مرتبط بهذه الحافلة مسبقاً، قم بتعديل السجل بدلاً من إضافة سجل جديد.'
+
+            );
+
+        }
         BusDriver::create([
 
             'branch_id'=>auth()->user()->employee->branch_id,

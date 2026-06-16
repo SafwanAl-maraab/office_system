@@ -48,7 +48,10 @@ class Bus extends Model
     public function currentTrip()
     {
         return $this->hasOne(Trip::class)
-            ->whereDate('trip_date',today())
+            ->whereIn('status', [
+                'scheduled',
+                'in_progress'
+            ])
             ->latest();
     }
 

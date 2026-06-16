@@ -43,4 +43,16 @@ class Client extends Model
     {
         return $this->hasMany(Booking::class ,'client_id');
     }
+
+    public function vouchers()
+    {
+        return $this->hasMany(ClientVoucher::class);
+    }
+
+    public function balanceLogs()
+    {
+        return $this->hasMany(
+            ClientBalanceLog::class
+        );
+    }
 }

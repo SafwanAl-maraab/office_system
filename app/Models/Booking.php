@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 
 class Booking extends Model
 {
@@ -26,12 +27,10 @@ class Booking extends Model
     ];
 
 
-
     public function trip()
     {
-        return $this->belongsTo(Trip::class ,'trip_id');
+        return $this->belongsTo(Trip::class, 'trip_id');
     }
-
 
 
     public function client()
@@ -39,6 +38,20 @@ class Booking extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
+    }
+
+    public function visa()
+    {
+        return $this->belongsTo(Visa::class);
+    }
+
+    public function request()
+    {
+        return $this->belongsTo(Request::class);
+    }
 
 
     public function currency()
@@ -47,25 +60,25 @@ class Booking extends Model
     }
 
 
-
     public function employee()
     {
-        return $this->belongsTo(Employee::class,'created_by');
+        return $this->belongsTo(Employee::class, 'created_by');
     }
 
     public function invoice()
     {
-        return $this->hasOne(Invoice::class,'reference_id')
-            ->where('reference_type','booking');
+        return $this->hasOne(Invoice::class, 'reference_id')
+            ->where('reference_type', 'booking');
     }
 
     public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
+
     public function transactions()
     {
-        return $this->belongsTo(AgentTransaction::class ,'booking_id');
+        return $this->belongsTo(AgentTransaction::class, 'booking_id');
     }
 
 

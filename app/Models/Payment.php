@@ -46,4 +46,11 @@ class Payment extends Model
     {
         return $this->belongsTo(Employee::class, 'created_by');
     }
+
+    public function allocations()
+    {
+        return $this->hasMany(
+            VoucherAllocation::class
+        );
+    }
 }

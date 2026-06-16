@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgentTransaction;
+use App\Models\ClientBalanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -422,115 +423,449 @@ class BookingController extends Controller
     }
 
 
-    public function changeStatus(Request $request, Booking $booking)
+    public function changeStatus(
+        Request $request,
+        Booking $booking
+    )
     {
-
         $status = $request->status;
 
+        $currentStatus =
+            $booking->status;
+
         /*
-        ============================
-        مكان الأكواد المستقبلية
-        ============================
+        |--------------------------------------------------------------------------
+        | نفس الحالة
+        |--------------------------------------------------------------------------
         */
 
-        $sta =$booking->status;
-
-        if($status ===$sta){
-
-      return back()->with('error','  تغيير الحالة الى الحالة السابقة');
-}
-
-if($sta=== 'issued'  &&  in_array($status,['pending','confirmed'])){
-
-    return back()->with('error',' لايمكن تحويلها الى انتظار او مؤكد بعد اصدارها ');
-}
-
-        if($sta=== 'issued'  &&  $status==='cancelled'){
-
-
-
-
-            $IdAgent = AgentTransaction::where('booking_id',$booking)->get();
-
-
-            return back()->with('error','تم الالغاء وتم سحب المبلغ من الوكيل  ' .$IdAgent);
-
-
+        if(
+            $status ===
+            $currentStatus
+        ){
+            return back()->with(
+                'error',
+                'الحجز بهذه الحالة مسبقاً'
+            );
         }
 
-        if ($status == 'issued') {
+        /*
+        |--------------------------------------------------------------------------
+        | حماية الإصدار
+        |--------------------------------------------------------------------------
+        */
 
-            $branchId = auth()->user()->employee->branch_id;
-        $agent = $booking->trip->bus->agent_id;
+        if(
+            $currentStatus === 'issued'
+            &&
+            in_array(
+                $status,
+                [
+                    'pending',
+                    'confirmed'
+                ]
+            )
+        ){
+            return back()->with(
+                'error',
+                'لا يمكن إعادة الحجز إلى انتظار أو مؤكد بعد الإصدار'
+            );
+        }
 
+        /*
+        |--------------------------------------------------------------------------
+        | إلغاء الحجز
+        |--------------------------------------------------------------------------
+        */
 
+        if(
+            $status === 'cancelled'
+        ){
 
-        try {
+            DB::beginTransaction();
 
-            $agent_cost = $booking->trip->purchase_price;
+            try{
 
+                $invoice =
+                    Invoice::where(
+                        'reference_type',
+                        'booking'
+                    )
+                        ->where(
+                            'reference_id',
+                            $booking->id
+                        )
+                        ->first();
 
+                /*
+                |--------------------------------------------------------------------------
+                | لا توجد فاتورة
+                |--------------------------------------------------------------------------
+                */
 
+                if(!$invoice)
+                {
+                    $booking->update([
 
-                AgentTransaction::create([
+                        'status' =>
+                            'cancelled'
 
-                    'agent_id' => $agent,
+                    ]);
 
-                    'branch_id' => $branchId,
+                    DB::commit();
 
-                    'booking_id' => $booking->id,
+                    return back()->with(
+                        'success',
+                        'تم إلغاء الحجز'
+                    );
+                }
 
-                    'type' => 'booking_cost',
+                $paidAmount =
+                    $invoice->paid_amount;
 
-                    'amount' => $agent_cost,
+                /*
+                |--------------------------------------------------------------------------
+                | يوجد مبلغ مدفوع
+                |--------------------------------------------------------------------------
+                */
 
-                    'currency_id' => $booking->currency_id,
+                if($paidAmount > 0)
+                {
+                    $refundInvoice =
+                        Invoice::create([
+
+                            'branch_id' =>
+                                $invoice->branch_id,
+
+                            'client_id' =>
+                                $invoice->client_id,
+
+                            'reference_type' =>
+                                'refund',
+
+                            'reference_id' =>
+                                $invoice->id,
+
+                            'total_amount' =>
+                                $paidAmount,
+
+                            'paid_amount' =>
+                                $paidAmount,
+
+                            'remaining_amount' =>
+                                0,
+
+                            'currency_id' =>
+                                $invoice->currency_id,
+
+                            'status' =>
+                                'paid',
+
+                            'cost' =>
+                                0,
+
+                            'is_refund' =>
+                                true,
+
+                            'reversed_invoice_id' =>
+                                $invoice->id
+
+                        ]);
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | استرجاع نقدي
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if(
+                        $request->refund_method
+                        ===
+                        'cash'
+                    ){
+
+                        Payment::create([
+
+                            'branch_id' =>
+                                $invoice->branch_id,
+
+                            'client_id' =>
+                                $invoice->client_id,
+
+                            'invoice_id' =>
+                                $refundInvoice->id,
+
+                            'amount' =>
+                                $paidAmount,
+
+                            'currency_id' =>
+                                $invoice->currency_id,
+
+                            'payment_method' =>
+                                'refund',
+
+                            'created_by' =>
+                                auth()->user()
+                                    ->employee
+                                    ->id
+
+                        ]);
+
+                        $cashbox =
+                            BranchCashbox::where(
+                                'branch_id',
+                                $invoice->branch_id
+                            )
+                                ->where(
+                                    'currency_id',
+                                    $invoice->currency_id
+                                )
+                                ->first();
+
+                        if(!$cashbox)
+                        {
+                            throw new \Exception(
+                                'الخزنة غير موجودة'
+                            );
+                        }
+
+                        if(
+                            $cashbox->balance
+                            <
+                            $paidAmount
+                        ){
+                            throw new \Exception(
+                                'رصيد الخزنة غير كافٍ'
+                            );
+                        }
+
+                        $cashbox->decrement(
+                            'balance',
+                            $paidAmount
+                        );
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | إضافة لرصيد العميل
+                    |--------------------------------------------------------------------------
+                    */
+
+                    else{
+
+                        ClientBalanceLog::create([
+
+                            'client_id' =>
+                                $invoice->client_id,
+
+                            'currency_id' =>
+                                $invoice->currency_id,
+
+                            'amount' =>
+                                $paidAmount,
+
+                            'type' =>
+                                'refund',
+
+                            'reference_type' =>
+                                'invoice',
+
+                            'reference_id' =>
+                                $refundInvoice->id,
+
+                            'notes' =>
+                                'استرجاع ناتج عن إلغاء الحجز',
+
+                            'created_by' =>
+                                auth()->user()
+                                    ->employee
+                                    ->id
+
+                        ]);
+                    }
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | إلغاء الفاتورة
+                |--------------------------------------------------------------------------
+                */
+
+                $invoice->update([
+
+                    'status' =>
+                        'cancelled',
+
+                    'paid_amount' =>
+                        0,
+
+                    'remaining_amount' =>
+                        0
 
                 ]);
 
-            $booking->update([
+                /*
+                |--------------------------------------------------------------------------
+                | حذف تكلفة الوكيل
+                |--------------------------------------------------------------------------
+                */
+                $oldTransaction =
+                    AgentTransaction::where(
+                        'booking_id',
+                        $booking->id
+                    )
+                        ->where(
+                            'type',
+                            'booking_cost'
+                        )
+                        ->latest()
+                        ->first();
 
-                'status'=>$status
+                if($oldTransaction)
+                {
+                    AgentTransaction::create([
 
-            ]);
+                        'agent_id' =>
+                            $oldTransaction->agent_id,
 
-            return back()->with(
+                        'branch_id' =>
+                            $oldTransaction->branch_id,
 
-                'success',
-                '  تم تغيير الحالة بنجاح وتسجيل  مبلغ للوكيل'
-.$agent_cost .$booking->currency->code
+                        'booking_id' =>
+                            $booking->id,
 
-            );
+                        'type' =>
+                            'booking_cost',
+
+
+                        'amount' =>
+                            -$oldTransaction->amount,
+
+                        'currency_id' =>
+                            $oldTransaction->currency_id
+
+                    ]);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | إلغاء الحجز
+                |--------------------------------------------------------------------------
+                */
+
+                $booking->update([
+
+                    'status' =>
+                        'cancelled'
+
+                ]);
+
+                DB::commit();
+
+                return back()->with(
+                    'success',
+                    'تم إلغاء الحجز وإنشاء المسترجع بنجاح'
+                );
+
+            }catch(\Exception $e){
+
+                DB::rollBack();
+
+                return back()->with(
+                    'error',
+                    $e->getMessage()
+                );
             }
-
-               catch(\Exception $e){
-
-
-                   return back()->with('error',$e->getMessage());
-
-    }
         }
 
         /*
-        ============================
-        تحديث الحالة
-        ============================
+        |--------------------------------------------------------------------------
+        | إصدار الحجز
+        |--------------------------------------------------------------------------
+        */
+
+        if(
+            $status === 'issued'
+        ){
+
+            $branchId =
+                auth()->user()
+                    ->employee
+                    ->branch_id;
+
+            $agent =
+                $booking->trip
+                    ->bus
+                    ->agent_id;
+
+            try{
+
+                $agentCost =
+                    $booking->trip
+                        ->purchase_price;
+
+                AgentTransaction::create([
+
+                    'agent_id' =>
+                        $agent,
+
+                    'branch_id' =>
+                        $branchId,
+
+                    'booking_id' =>
+                        $booking->id,
+
+                    'type' =>
+                        'adjustment',
+
+                    'amount' =>
+                        $agentCost,
+
+                    'currency_id' =>
+                        $booking->currency_id
+
+                ]);
+
+                $booking->update([
+
+                    'status' =>
+                        'issued'
+
+                ]);
+
+                return back()->with(
+
+                    'success',
+
+                    'تم إصدار الحجز وتسجيل تكلفة الوكيل'
+
+                );
+
+            }catch(\Exception $e){
+
+                return back()->with(
+                    'error',
+                    $e->getMessage()
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | تحديث عادي
+        |--------------------------------------------------------------------------
         */
 
         $booking->update([
 
-            'status'=>$status
+            'status' =>
+                $status
 
         ]);
 
         return back()->with(
-
             'success',
-            'تم تغيير الحالة بنجاح'
-          . $status
+            'تم تحديث الحالة بنجاح'
         );
-
     }
-
-
 }

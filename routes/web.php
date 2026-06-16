@@ -1,8 +1,11 @@
 <?php
 
 
-
+use App\Http\Controllers\Frontend\BusController;
+use App\Http\Controllers\Frontend\ClientVoucherController;
+use App\Http\Controllers\Frontend\ExchangeRateController;
 use App\Http\Controllers\Frontend\ExpenseController;
+use App\Http\Controllers\Frontend\VoucherSettlementController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ClientController;
@@ -390,6 +393,141 @@ Route::prefix('dashboard')
         )->name('bus_assignments.destroy');
 
     });
+
+
+
+Route::prefix('dashboard')
+    ->group(function(){
+
+
+        Route::get('/drivers', [\App\Http\Controllers\Frontend\DriverController::class,'index'])
+            ->name('drivers.index');
+
+        Route::post('/drivers', [\App\Http\Controllers\Frontend\DriverController::class,'store'])
+            ->name('drivers.store');
+
+        Route::put('/drivers/{id}', [\App\Http\Controllers\Frontend\DriverController::class,'update'])
+            ->name('drivers.update');
+
+        Route::delete('/drivers/{id}', [BusController::class,'destroy'])
+            ->name('drivers.destroy');
+    });
+
+
+Route::prefix('dashboard')
+    ->group(function() {
+
+
+        Route::get('/buses', [BusController::class, 'index'])
+            ->name('buses.index');
+
+        Route::post('/buses', [BusController::class, 'store'])
+            ->name('buses.store');
+
+        Route::put('/buses/{id}', [BusController::class, 'update'])
+            ->name('buses.update');
+
+        Route::delete('/buses/{id}', [BusController::class, 'destroy'])
+            ->name('buses.destroy');
+
+    });
+Route::middleware(['auth'])
+
+    ->group(function () {
+
+        Route::get(
+            '/client-vouchers',
+            [ClientVoucherController::class,'index']
+        )->name('client-vouchers.index');
+
+        Route::post(
+            '/client-vouchers',
+            [ClientVoucherController::class,'store']
+        )->name('client-vouchers.store');
+
+        // جلب بيانات العميل للمودال
+
+        Route::get(
+            '/client-vouchers/client-info/{id}',
+            [ClientVoucherController::class,'clientInfo']
+        )->name('client-vouchers.client-info');
+
+
+        Route::get(
+            '/clients/search',
+            [ClientController::class,'search']
+        );
+
+
+
+        Route::get(
+            '/clients/{client}/statement',
+            [ClientController::class,'statement']
+        )->name('clients.statement');
+
+
+        Route::get(
+            '/exchange-rates',
+            [ExchangeRateController::class,'index']
+        )->name('exchange-rates.index');
+
+        Route::post(
+            '/exchange-rates',
+            [ExchangeRateController::class,'store']
+        )->name('exchange-rates.store');
+
+        Route::put(
+            '/exchange-rates/{id}',
+            [ExchangeRateController::class,'update']
+        )->name('exchange-rates.update');
+
+        Route::get(
+            '/exchange-rates/find',
+            [ExchangeRateController::class,'findRate']
+        )->name('exchange-rates.find');
+
+        Route::post(
+            '/voucher-settlements/settle',
+            [VoucherSettlementController::class,'settle']
+        )->name('voucher-settlements.settle');
+
+        Route::get(
+            '/client-vouchers/{voucher}',
+            [ClientVoucherController::class,'show']
+        )->name('client-vouchers.show');
+
+    });
+
+Route::middleware(['auth'])
+    ->prefix('dashboard')
+    ->group(function () {
+
+        Route::get(
+            '/voucher-settlements',
+            [VoucherSettlementController::class,'index']
+        )->name('voucher-settlements.index');
+
+        Route::get(
+            '/voucher-settlements/client/{id}',
+            [VoucherSettlementController::class,'clientData']
+        )->name('voucher-settlements.client');
+
+
+    });
+
+Route::middleware(['auth'])
+
+    ->group(function () {
+
+        Route::post(
+            '/invoices/{invoice}/cancel-operation',
+            [InvoiceController::class,'cancelOperation']
+        )->name(
+            'invoices.cancel-operation'
+        );
+
+    });
+
 //end safwan
 
 
@@ -524,6 +662,9 @@ Route::middleware(['auth'])
 
 
     });
+
+
+
 // الوكلاء محمد المعرب
 use App\Http\Controllers\Frontend\AgentController;
 
