@@ -77,4 +77,8 @@ class Branch extends Model
     {
         return $this->hasMany(Trip::class);
     }
+    public function infos()
+    {
+        return $this->hasMany(Info::class);
+    }
 }

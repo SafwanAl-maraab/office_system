@@ -7,6 +7,7 @@ use App\Models\ClientBalanceLog;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\BranchCashbox;
+use App\Services\CashboxTransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -92,97 +93,146 @@ class InvoiceController extends Controller
     {
         $branchId = auth()->user()->employee->branch_id;
 
-        $originalInvoice = Invoice::where('branch_id',$branchId)
-            ->where('is_refund',false)
-            ->findOrFail($id);
-
+        // 1. التحقق من البيانات المدخلة
         $request->validate([
-            'refund_amount' => 'required|numeric|min:0.01'
+            'refund_amount' => 'required|numeric|min:0.01',
+            'refund_method' => 'required|in:cash,balance', // نقداً أو رصيد حساب
+            'refund_reason' => 'nullable|string|max:500',  // الملاحظات أو السبب
         ]);
 
-        // حماية: لا يمكن استرجاع أكثر من المدفوع
-        if ($request->refund_amount > $originalInvoice->paid_amount) {
-            return back()->withErrors([
-                'refund_amount' => 'المبلغ أكبر من المدفوع'
-            ]);
+        try {
+            $originalInvoice = Invoice::where('branch_id', $branchId)
+                ->where('is_refund', false)
+                ->findOrFail($id);
+
+            // حماية محاسبية: لا يمكن استرجاع أكثر من المدفوع فعلياً
+            if ($request->refund_amount > $originalInvoice->paid_amount) {
+                throw new \Exception('المبلغ المراد استرجاعه أكبر من المبلغ المدفوع في الفاتورة الأصلية.');
+            }
+
+            DB::transaction(function() use ($request, $originalInvoice) {
+
+                /* ==========================================================================
+                   1️⃣ إنشاء فاتورة مسترجع (Refund Invoice)
+                ========================================================================== */
+                $refundInvoice = Invoice::create([
+                    'branch_id'           => $originalInvoice->branch_id,
+                    'client_id'           => $originalInvoice->client_id,
+                    'reference_type'      => 'refund',
+                    'reference_id'        => $originalInvoice->id,
+                    'total_amount'        => $request->refund_amount,
+                    'paid_amount'         => $request->refund_amount,
+                    'remaining_amount'    => 0,
+                    'currency_id'         => $originalInvoice->currency_id,
+                    'status'              => 'paid',
+                    'cost'                => 0,
+                    'is_refund'           => true,
+                    'reversed_invoice_id' => $originalInvoice->id,
+                ]);
+
+
+                /* ==========================================================================
+                   2️⃣ معالجة طريقة الاسترجاع (نقداً أو رصيد حساب)
+                ========================================================================== */
+                if ($request->refund_method === 'balance') {
+
+                    // أ: إضافة المبلغ إلى سجل رصيد العميل المتوفر
+                    ClientBalanceLog::create([
+                        'client_id'      => $originalInvoice->client_id,
+                        'currency_id'    => $originalInvoice->currency_id,
+                        'amount'         => $request->refund_amount, // يضاف كمبلغ موجب لأنه قيد إيداع لصالح العميل
+                        'type'           => 'refund',
+                        'reference_type' => 'invoice',
+                        'reference_id'   => $refundInvoice->id,
+                        'notes'          => $request->refund_reason,
+                        'created_by'     => auth()->user()->employee->id,
+                    ]);
+
+                    // 💡 ملاحظة: إذا كان جدول العميل يحتوي على حقل إجمالي الرصيد المباشر (مثل: balance) يفضل تحديثه هنا أيضاً.
+
+                } else {
+
+                    // ب: الاسترجاع نقداً (كاش) -> نقوم بإنشاء حركة دفع مالي مع نوع الاسترجاع
+                    Payment::create([
+                        'branch_id'      => $originalInvoice->branch_id,
+                        'client_id'      => $originalInvoice->client_id,
+                        'invoice_id'     => $refundInvoice->id,
+                        'amount'         => $request->refund_amount,
+                        'currency_id'    => $originalInvoice->currency_id,
+                        'payment_method' => 'refund',
+                        'created_by'     => auth()->user()->employee->id,
+                    ]);
+
+                    /* ==========================================================================
+                       3️⃣ إنقاص الخزنة (يتم فقط في حالة الاسترجاع النقدي cash)
+                    ========================================================================== */
+                    $cashbox = BranchCashbox::where('branch_id', $originalInvoice->branch_id)
+                        ->where('currency_id', $originalInvoice->currency_id)
+                        ->first();
+
+
+                    if (!$cashbox) {
+                        throw new \Exception('الخزنة الخاصة بهذه العملة غير موجودة في هذا الفرع.');
+                    }
+
+                    if ($cashbox->balance < $request->refund_amount) {
+                        throw new \Exception('رصيد الخزنة الحالي غير كافٍ لإتمام عملية الاسترجاع النقدي.');
+                    }
+
+                    $cashbox->decrement('balance', $request->refund_amount);
+                    CashboxTransactionService::log(
+
+                        branchId:
+                        $cashbox->branch_id,
+
+                        currencyId:
+                        $cashbox->currency_id,
+
+                        amount:
+                        -$request->refund_amount,
+
+                        type:
+                        'refund',
+
+                        referenceType:
+                        'invoice',
+
+                        referenceId:
+                        $refundInvoice->id,
+
+                        notes:
+                        'استرجاع فاتورة',
+
+                        employeeId:
+                        auth()->user()->employee->id
+
+                    );
+
+                }
+
+
+                /* ==========================================================================
+                   4️⃣ تحديث قيم وحالة الفاتورة الأصلية
+                ========================================================================== */
+                $originalInvoice->paid_amount -= $request->refund_amount;
+                $originalInvoice->remaining_amount = $originalInvoice->total_amount - $originalInvoice->paid_amount;
+
+                if ($originalInvoice->paid_amount <= 0) {
+                    $originalInvoice->status = 'unpaid';
+                } else {
+                    $originalInvoice->status = 'partial';
+                }
+
+                $originalInvoice->save();
+
+            });
+
+            return back()->with('success', 'تم إنشاء حركة المسترجع وتحديث الحسابات بنجاح.');
+
+        } catch (\Exception $e) {
+            // العودة للخلف مع إظهار رسالة الخطأ للمستخدم بشكل مرن وأنيق
+            return back()->with('error', $e->getMessage());
         }
-
-        DB::transaction(function() use ($request, $originalInvoice){
-
-            /* ===============================
-               1️⃣ إنشاء فاتورة مسترجع
-            =============================== */
-
-            $refundInvoice = Invoice::create([
-                'branch_id' => $originalInvoice->branch_id,
-                'client_id' => $originalInvoice->client_id,
-                'reference_type' => 'refund',
-                'reference_id' => $originalInvoice->id,
-                'total_amount' => $request->refund_amount,
-                'paid_amount' => $request->refund_amount,
-                'remaining_amount' => 0,
-                'currency_id' => $originalInvoice->currency_id,
-                'status' => 'paid',
-                'cost' => 0,
-                'is_refund' => true,
-                'reversed_invoice_id' => $originalInvoice->id,
-            ]);
-
-
-            /* ===============================
-               2️⃣ تسجيل حركة دفع عليها
-            =============================== */
-
-            Payment::create([
-                'branch_id'   => $originalInvoice->branch_id,
-                'client_id'   => $originalInvoice->client_id,
-                'invoice_id'  => $refundInvoice->id,
-                'amount'      => $request->refund_amount,
-                'currency_id' => $originalInvoice->currency_id,
-                'payment_method' => 'refund',
-                'created_by'  => auth()->user()->employee->id,
-            ]);
-
-
-            /* ===============================
-               3️⃣ تعديل الفاتورة الأصلية
-            =============================== */
-
-            $originalInvoice->paid_amount -= $request->refund_amount;
-            $originalInvoice->remaining_amount =
-                $originalInvoice->total_amount - $originalInvoice->paid_amount;
-
-            if ($originalInvoice->paid_amount <= 0) {
-                $originalInvoice->status = 'unpaid';
-            } else {
-                $originalInvoice->status = 'partial';
-            }
-
-            $originalInvoice->save();
-
-
-            /* ===============================
-               4️⃣ إنقاص الخزنة
-            =============================== */
-
-            $cashbox = BranchCashbox::where('branch_id',$originalInvoice->branch_id)
-                ->where('currency_id',$originalInvoice->currency_id)
-                ->first();
-
-            if (!$cashbox) {
-                abort(403,'الخزنة غير موجودة');
-            }
-
-            if ($cashbox->balance < $request->refund_amount) {
-                abort(403,'الرصيد في الخزنة غير كافٍ');
-            }
-
-            $cashbox->balance -= $request->refund_amount;
-            $cashbox->save();
-
-        });
-
-        return back()->with('success','تم إنشاء فاتورة مسترجع بنجاح');
     }
 
 

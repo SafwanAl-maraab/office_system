@@ -68,6 +68,7 @@ class VisaController extends Controller
         'currency_id' => 'required|exists:currencies,id',
         'sale_price' => 'required|numeric|min:0',
         'cost_price' => 'required|numeric|min:0',
+        'final_price' => 'required|numeric|min:0',
         'original_price' => 'nullable|numeric|min:0',
         'discount_percentage' => 'nullable|numeric|min:0|max:100',
         'agent_id' => 'nullable|exists:agents,id',
@@ -79,7 +80,11 @@ class VisaController extends Controller
 
     try {
 if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
-    return back()->with('error', 'لم يتم اختيار وكيل');
+
+    throw new \Exception(
+        'لم يتم اختيار وكيل'
+    );
+
 }
 
         $employee = auth()->user()->employee;
@@ -97,13 +102,49 @@ if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
                 ($request->original_price * $request->discount_percentage) / 100;
         }
 
+
+
         /*
         |--------------------------------------------------------------------------
         | إنشاء التأشيرة
         |--------------------------------------------------------------------------
+
         */
+        //المطابقة بين الحقول في التكلفة
+        $sumCost =   ($request->original_price ?? 0)
+            +
+            ($request->agent_cost ?? 0);
+
+        if ($request->filled('discount_percentage') && $request->original_price) {
+
+            if(  $sumCost >= $request->final_price  ){
+
+                throw new \Exception(
+                    ' كمية الخصم  مرتفعة   '
+                );
+
+            }
+        }
+
+        if(  $sumCost !== $request->cost_price || $sumCost <= 0 ){
+
+            throw new \Exception(
+                'التكلفة غير متساوية '
+            );
+
+        }
+
+        if(  $sumCost >= $request->sale_price  ){
+
+            throw new \Exception(
+                '  سعر البيع اقل او يساوي التكلفة ! '
+            );
+
+        }
+
+
         $totalCost =
-            ($request->cost_price ?? 0)
+            ($request->original_price ?? 0)
             +
             ($request->agent_cost ?? 0);
 
@@ -113,8 +154,7 @@ if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
             $totalCost
         ){
             throw new \Exception(
-                'سعر البيع أقل من إجمالي التكلفة'
-            );
+                'سعر البيع أقل من إجمالي التكلفة'     );
         }
 
         $visaNumber = 'V-' . date('Y') . '-' . str_pad(Visa::count()+1,5,'0',STR_PAD_LEFT);
@@ -128,7 +168,7 @@ if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
 
 'visa_type_id' => $request->visa_type_id,
 
-'agent_id' => $request->agent_id,
+'agent_id' => $request->agent_id ,
 
 'passport_number' => $request->passport_number,
 
@@ -188,7 +228,7 @@ AgentTransaction::create([
             'client_id' => $request->client_id,
             'reference_type' => 'visa',
             'reference_id' => $visa->id,
-            'total_amount' => $request->sale_price,
+            'total_amount' => $request->final_price,
             'paid_amount' => 0,
             'remaining_amount' => $request->sale_price,
            'cost' => $request->cost_price,

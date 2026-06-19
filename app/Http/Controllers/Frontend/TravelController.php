@@ -23,7 +23,8 @@ class TravelController extends Controller
             ->get();
 
         $drivers = Driver::where('branch_id', $branchId)
-            ->where('status', true)
+            ->where('type', 'agent_driver')
+            ->where('status', 'active')
             ->get();
 
         return view('frontend.travels.index',

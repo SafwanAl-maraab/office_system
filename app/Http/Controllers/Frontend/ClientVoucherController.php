@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\BranchCashbox;
+use App\Models\CashboxTransaction;
 use App\Models\Client;
 use App\Models\ClientVoucher;
 use App\Models\Currency;
@@ -237,126 +239,272 @@ class ClientVoucherController extends Controller
     {
         $request->validate([
 
+            'client_id'   => 'required|exists:clients,id',
 
-    'client_id'   => 'required|exists:clients,id',
+            'currency_id' => 'required|exists:currencies,id',
 
-    'currency_id' => 'required|exists:currencies,id',
+            'type'        => 'required|in:receipt,payment',
 
-    'type'        => 'required|in:receipt,payment',
+            'amount'      => 'required|numeric|min:0.01',
 
-    'amount'      => 'required|numeric|min:0.01',
+            'notes'       => 'nullable|string'
 
-    'notes'       => 'nullable|string'
-]);
+        ]);
 
-/*
-|--------------------------------------------------------------------------
-| منع الصرف إذا الرصيد غير كافٍ
-|--------------------------------------------------------------------------
-*/
+        $branchId =
+            auth()->user()
+                ->employee
+                ->branch_id;
 
-if($request->type == 'payment')
-{
-    $balance =
-        ClientBalanceService::getBalance(
-            $request->client_id,
-            $request->currency_id
-        );
+        DB::beginTransaction();
 
-    if($balance < $request->amount)
-    {
-        return back()->with(
-            'error',
-            'رصيد العميل غير كافٍ'
-        );
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | التحقق من رصيد العميل عند سند الصرف
+            |--------------------------------------------------------------------------
+            */
+
+            if($request->type == 'payment')
+            {
+                $clientBalance =
+                    ClientBalanceService::getBalance(
+                        $request->client_id,
+                        $request->currency_id
+                    );
+
+                if(
+                    $clientBalance <
+                    $request->amount
+                ){
+                    throw new \Exception(
+                        'رصيد العميل غير كافٍ'
+                    );
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | الخزنة
+            |--------------------------------------------------------------------------
+            */
+
+            $cashbox =
+                BranchCashbox::where(
+                    'branch_id',
+                    $branchId
+                )
+                    ->where(
+                        'currency_id',
+                        $request->currency_id
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+            if(!$cashbox)
+            {
+                throw new \Exception(
+                    'الخزنة غير موجودة'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | منع الصرف إذا الخزنة غير كافية
+            |--------------------------------------------------------------------------
+            */
+
+            if(
+                $request->type == 'payment'
+                &&
+                $cashbox->balance <
+                $request->amount
+            ){
+                throw new \Exception(
+                    'الرصيد في الخزنة غير كافٍ'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | إنشاء السند
+            |--------------------------------------------------------------------------
+            */
+
+            $voucher =
+                ClientVoucher::create([
+
+                    'branch_id' =>
+                        $branchId,
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'currency_id' =>
+                        $request->currency_id,
+
+                    'created_by' =>
+                        auth()->user()
+                            ->employee
+                            ->id,
+
+                    'type' =>
+                        $request->type,
+
+                    'amount' =>
+                        $request->amount,
+
+                    'notes' =>
+                        $request->notes
+
+                ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | حركة رصيد العميل
+            |--------------------------------------------------------------------------
+            */
+
+            $logAmount =
+                $request->type == 'receipt'
+                    ? $voucher->amount
+                    : -$voucher->amount;
+
+            ClientBalanceService::addLog([
+
+                'client_id' =>
+                    $voucher->client_id,
+
+                'currency_id' =>
+                    $voucher->currency_id,
+
+                'amount' =>
+                    $logAmount,
+
+                'type' =>
+                    $voucher->type,
+
+                'reference_type' =>
+                    'voucher',
+
+                'reference_id' =>
+                    $voucher->id,
+
+                'notes' =>
+                    $voucher->notes,
+
+                'created_by' =>
+                    auth()->user()
+                        ->employee
+                        ->id
+
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | حركة الخزنة
+            |--------------------------------------------------------------------------
+            */
+
+            if($request->type == 'receipt')
+            {
+                $cashbox->balance +=
+                    $request->amount;
+
+                $cashbox->save();
+
+                CashboxTransaction::create([
+
+                    'branch_id' =>
+                        $branchId,
+
+                    'currency_id' =>
+                        $request->currency_id,
+
+                    'amount' =>
+                        $request->amount,
+
+                    'type' =>
+                        'income',
+
+                    'reference_type' =>
+                        'client_voucher',
+
+                    'reference_id' =>
+                        $voucher->id,
+
+                    'notes' =>
+                        'سند قبض رقم #'.$voucher->id,
+
+                    'created_by' =>
+                        auth()->user()
+                            ->employee
+                            ->id
+
+                ]);
+            }
+            else
+            {
+                $cashbox->balance -=
+                    $request->amount;
+
+                $cashbox->save();
+
+                CashboxTransaction::create([
+
+                    'branch_id' =>
+                        $branchId,
+
+                    'currency_id' =>
+                        $request->currency_id,
+
+                    'amount' =>
+                        -$request->amount,
+
+                    'type' =>
+                        'expense',
+
+                    'reference_type' =>
+                        'client_voucher',
+
+                    'reference_id' =>
+                        $voucher->id,
+
+                    'notes' =>
+                        'سند صرف رقم #'.$voucher->id,
+
+                    'created_by' =>
+                        auth()->user()
+                            ->employee
+                            ->id
+
+                ]);
+            }
+
+            DB::commit();
+
+            return back()->with(
+
+                'success',
+
+                $request->type == 'receipt'
+                    ? 'تم إنشاء سند القبض بنجاح'
+                    : 'تم إنشاء سند الصرف بنجاح'
+
+            );
+
+        }
+        catch (\Exception $e)
+        {
+            DB::rollBack();
+
+            return back()->with(
+                'error',
+                $e->getMessage()
+            );
+        }
     }
-}
-
-/*
-|--------------------------------------------------------------------------
-| إنشاء السند
-|--------------------------------------------------------------------------
-*/
-
-$voucher = ClientVoucher::create([
-
-    'branch_id' =>
-        auth()->user()->employee->branch_id,
-
-    'client_id' =>
-        $request->client_id,
-
-    'currency_id' =>
-        $request->currency_id,
-
-    'created_by' =>
-        auth()->user()->employee->id,
-
-    'type' =>
-        $request->type,
-
-    'amount' =>
-        $request->amount,
-
-    'notes' =>
-        $request->notes
-
-]);
-
-/*
-|--------------------------------------------------------------------------
-| حركة الرصيد
-|--------------------------------------------------------------------------
-*/
-
-        $logAmount = in_array(
-            $request->type,
-            [
-                'receipt',
-                'opening_balance'
-            ]
-        )
-            ? $voucher->amount
-            : -$voucher->amount;
-
-ClientBalanceService::addLog([
-
-    'client_id' =>
-        $voucher->client_id,
-
-    'currency_id' =>
-        $voucher->currency_id,
-
-    'amount' =>
-        $logAmount,
-
-    'type' =>
-        $voucher->type,
-
-    'reference_type' =>
-        'voucher',
-
-    'reference_id' =>
-        $voucher->id,
-
-    'notes' =>
-        $voucher->notes,
-
-    'created_by' =>
-        auth()->user()->employee->id
-
-]);
-
-return back()->with(
-    'success',
-    $request->type == 'receipt'
-        ? 'تم إنشاء سند القبض بنجاح'
-        : 'تم إنشاء سند الصرف بنجاح'
-);
-
-
-}
-
     /**
      * AJAX
      */

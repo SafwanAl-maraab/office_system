@@ -222,6 +222,25 @@ dark:bg-gray-800 dark:border-gray-700 dark:text-white">
 
                     </div>
 
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            السائق المسؤول عن الرحلة
+                        </label>
+                        <select
+                            name="driver_id"
+                            required
+                            class="mt-1 w-full px-3 py-2 border rounded-lg
+focus:outline-none focus:ring-2 focus:ring-black
+dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+
+                            <option value="">اختر السائق</option>
+                            @foreach($drivers as $driver)
+                                <option value="{{ $driver->id }}">
+                                    {{ $driver->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
 
 
@@ -244,7 +263,6 @@ dark:bg-gray-800 dark:border-gray-700 dark:text-white"></textarea>
 
 
                 </div>
-
 
 
 

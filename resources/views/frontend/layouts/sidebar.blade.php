@@ -257,8 +257,13 @@
         @php
             $financeActive = request()->routeIs('dashboard.invoices.*')
                             || request()->routeIs('dashboard.payments.*')
-                            || request()->routeIs('dashboard.expenses.*')
-               || request()->routeIs('dashboard.cashboxes.*');
+                            || request()->routeIs('dashboard.expenses.blade.php.*')
+               || request()->routeIs('cashbox-exchanges.*')
+               || request()->routeIs('client-vouchers.*')
+                || request()->routeIs('incomes*')
+               || request()->routeIs('dashboard.expenses.blade.php.*')
+               || request()->routeIs('voucher-settlementss.*')
+               ;
         @endphp
 
         <div>
@@ -311,6 +316,16 @@
                 </a>
 
 
+                <a href="{{ route('incomes.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('incomes.*')
+                ? 'bg-blue-600 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+                    الايرادات
+                </a>
+
+
                 {{-- إدارة الخزنة --}}
                 <a href="{{ route('dashboard.cashboxes.index') }}"
                    class="block px-3 py-2 rounded-xl text-sm transition
@@ -321,14 +336,21 @@
                     إدارة الخزنة
 
                 </a>
+                <a href="{{ route('cashbox-exchanges.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('cashbox-exchanges.*')
+                ? 'bg-blue-600 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                    مصارفة الخزنة
+                </a>
 
                 <a href="{{ route('client-vouchers.index') }}"
                    class="block px-3 py-2 rounded-xl text-sm transition
-   {{ request()->routeIs('clients.*')
+   {{ request()->routeIs('client-vouchers.*')
         ? 'bg-blue-600 text-white'
         : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
 
-                💳
+
 
                     <span>
         سندات العملاء
@@ -336,10 +358,31 @@
 
                 </a>
 
-                <a href="{{ route('exchange-rates.index') }}"
-                   class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-blue-50 dark:hover:bg-gray-800">
 
-                    💱
+                <a href="{{ route('voucher-settlements.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('voucher-settlements.*')
+        ? 'bg-blue-600 text-white'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+
+
+                    <span>
+                        التسويةالمالية
+    </span>
+
+                </a>
+
+
+
+                <a href="{{ route('exchange-rates.index') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+   {{ request()->routeIs('xchange-rates.*')
+        ? 'bg-blue-600 text-white'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+
+
+
 
                     <span>
         أسعار الصرف
@@ -524,7 +567,7 @@ $agentsActive = request()->routeIs('agents.*');
 
             @php
                 $AccountActive =
-                    request()->routeIs('dashboard.requests.*') ;
+                    request()->routeIs('reports.financial.*') ;
 //                   request()->routeIs('dashboard.travels.*') ||
 //                    request()->routeIs('dashboard.request-types.*');
             @endphp
@@ -540,7 +583,7 @@ $agentsActive = request()->routeIs('agents.*');
                 <div class="flex items-center gap-3">
                     <span>🪪</span>
                     <span x-show="!collapsed" class="text-sm font-medium">
-                         كشف حسابات
+                         اخرى
             </span>
                 </div>
 
@@ -554,12 +597,12 @@ $agentsActive = request()->routeIs('agents.*');
 
 
                 <!--  Client -->
-                <a href="#"
+                <a href="{{ route('reports.financial') }}"
                    class="block px-3 py-2 rounded-xl text-sm transition
-           {{ request()->routeIs('dashboard.requests.*')
+           {{ request()->routeIs('reports.financial.*')
                 ? 'bg-blue-500 text-white'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
-                    كشف حساب عميل
+                التقارير
                 </a>
 
 

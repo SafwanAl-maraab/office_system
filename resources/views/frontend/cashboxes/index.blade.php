@@ -118,19 +118,29 @@
 
 
                     {{-- أزرار التحكم --}}
-                    <div class="flex justify-end">
+                    <div class="flex gap-2 justify-end">
+
+
+                        <a
+                            href="{{ route('cashboxes.transactions',$cashbox->currency_id) }}"
+                            class="px-4 py-2 rounded-xl
+           bg-emerald-600 hover:bg-emerald-700
+           text-white text-sm">
+
+                            حركة الخزنة
+
+                        </a>
 
                         <button
                             onclick="openEditCurrencyModal(
-                {{ $cashbox->currency->id }},
-                '{{ $cashbox->currency->name }}',
-                '{{ $cashbox->currency->symbol }}',
-                {{ $cashbox->currency->status }}
-            )"
-
+        {{ $cashbox->currency->id }},
+        '{{ $cashbox->currency->name }}',
+        '{{ $cashbox->currency->symbol }}',
+        {{ $cashbox->currency->status }}
+    )"
                             class="px-4 py-2 rounded-xl
-                   bg-blue-600 hover:bg-blue-700
-                   text-white text-sm">
+           bg-blue-600 hover:bg-blue-700
+           text-white text-sm">
 
                             تعديل العملة
 

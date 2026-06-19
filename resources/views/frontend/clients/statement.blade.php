@@ -181,8 +181,12 @@
 
                                     <span class="font-mono font-black text-emerald-700">
 
-                        {{ number_format(min($item['balance'],$item['receivable']),2) }}
+{{--                        {{ number_format(min($item['balance'],$item['receivable']),2) }}--}}
+                                        @if($item['net'] > 0)
 
+                                            {{ number_format($item['net'],2) }}
+
+                                        @endif
                     </span>
 
                                 </div>
@@ -280,7 +284,7 @@
                         <th class="p-4 whitespace-nowrap">التاريخ والوقت</th>
                         <th class="p-4 whitespace-nowrap">نوع التدقيق</th>
                         <th class="p-4 whitespace-nowrap">العملية والشرط</th>
-                        <th class="p-4 whitespace-nowrap">رقم الفاتورة</th>
+                        <th class="p-4 whitespace-nowrap">رقم السند </th>
                         <th class="p-4 text-left whitespace-nowrap">مدين (-)</th>
                         <th class="p-4 text-left whitespace-nowrap">دائن (+)</th>
                         <th class="p-4 text-left whitespace-nowrap">الرصيد المتتابع</th>
@@ -317,8 +321,8 @@
                             </td>
 
                             <td class="p-4 font-mono text-xs font-black text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                                @if($log->invoice_number)
-                                    <span class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 px-2 py-0.5 rounded">#{{ $log->invoice_number }}</span>
+                                @if($log->id)
+                                    <span class="bg-gray-50 dark:bg-gray-950 border dark:border-gray-800 px-2 py-0.5 rounded">#{{ $log->id }}</span>
                                 @else
                                     -
                                 @endif

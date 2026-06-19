@@ -7,7 +7,7 @@ use App\Models\ClientBalanceLog;
 use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Role;
+use App\Models\RoleOld;
 use Illuminate\Http\Request;
 use App\Models\Client;
 

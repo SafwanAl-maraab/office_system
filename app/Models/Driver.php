@@ -17,6 +17,7 @@ class Driver extends Model
     protected $fillable = [
         'branch_id',
         'name',
+        'type',
         'phone',
         'license_number',
         'status',

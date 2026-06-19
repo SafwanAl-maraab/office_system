@@ -39,14 +39,14 @@ class="p-4 space-y-4">
 type="text"
 id="clientSearch"
 placeholder="ابحث باسم العميل"
-class="input" 
+class="input"
 required
 >
 
 <input
 type="hidden"
 name="client_id"
-id="client_id" 
+id="client_id"
 
 >
 
@@ -148,7 +148,7 @@ min="0"
 <input type="number"
 name="agent_cost"
 id="agent_cost"
-class="input" 
+class="input"
 value="0"
 min="0"
 >
@@ -181,6 +181,7 @@ id="discount_percentage"
 class="input"
 value="0"
 min="0"
+       max="100"
 >
 
 </div>
@@ -211,6 +212,7 @@ readonly>
 
 <input
 type="number"
+name="final_price"
 id="final_price"
 class="input bg-gray-100"
 readonly>
@@ -250,7 +252,7 @@ readonly>
 
 <div id="agentBox" class="hidden mt-2">
 
-<select name="agent_id" class="input">
+<select name="agent_id" class="input" >
 
 <option value="">اختر الوكيل</option>
 

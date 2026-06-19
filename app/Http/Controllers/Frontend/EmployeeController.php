@@ -9,7 +9,7 @@ use App\Models\Payment;
 use App\Models\Visa;
 use Illuminate\Http\Request;
 use App\Models\Employee;
-use App\Models\Role;
+use Spatie\Permission\Models\Role;
 use App\Models\Request as Request2;
 
 class EmployeeController extends Controller

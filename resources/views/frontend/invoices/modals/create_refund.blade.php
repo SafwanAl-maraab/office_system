@@ -67,6 +67,45 @@
                           class="w-full px-4 py-2 rounded-xl border
                                  dark:bg-gray-900 dark:border-gray-700"></textarea>
             </div>
+            <div class="space-y-3">
+
+
+                <label class="block text-sm font-medium">
+                    طريقة الاسترجاع
+                </label>
+
+                <div class="space-y-2">
+
+                    <label class="flex items-center gap-3">
+
+                        <input type="radio"
+                               name="refund_method"
+                               value="cash"
+                               checked>
+
+                        <span>
+            تسليم المبلغ للعميل الآن (خصم من الخزنة)
+        </span>
+
+                    </label>
+
+                    <label class="flex items-center gap-3">
+
+                        <input type="radio"
+                               name="refund_method"
+                               value="balance">
+
+                        <span>
+            إضافة المبلغ إلى رصيد العميل
+        </span>
+
+                    </label>
+
+                </div>
+
+
+            </div>
+
 
             <div class="flex justify-end gap-3 pt-4">
 
@@ -158,4 +197,233 @@
         });
 
     });
+</script>
+<script>
+
+    let currentRate = 0;
+    let reverseRate = false;
+
+    const fromCurrency =
+        document.getElementById(
+            'fromCurrency'
+        );
+
+    const toCurrency =
+        document.getElementById(
+            'toCurrency'
+        );
+
+    const amountInput =
+        document.getElementById(
+            'fromAmount'
+        );
+
+    function openExchangeModal()
+    {
+        const modal =
+            document.getElementById(
+                'exchangeModal'
+            );
+
+        modal.classList.remove(
+            'hidden'
+        );
+
+        modal.classList.add(
+            'flex'
+        );
+
+        document.body.style.overflow =
+            'hidden';
+
+        loadExchangeData();
+    }
+
+    function closeExchangeModal()
+    {
+        const modal =
+            document.getElementById(
+                'exchangeModal'
+            );
+
+        modal.classList.remove(
+            'flex'
+        );
+
+        modal.classList.add(
+            'hidden'
+        );
+
+        document.body.style.overflow =
+            'auto';
+    }
+
+    async function loadExchangeData()
+    {
+        if(
+            fromCurrency.value ===
+            toCurrency.value
+        ){
+            document.getElementById(
+                'rateDisplay'
+            ).innerHTML =
+                'اختر عملتين مختلفتين';
+
+            document.getElementById(
+                'resultAmount'
+            ).innerHTML =
+                '0.00';
+
+            return;
+        }
+
+        /*
+        ============================
+        الأرصدة
+        ============================
+        */
+
+        const balanceResponse =
+            await fetch(
+
+                `{{ route('cashbox-exchanges.get-balances') }}?from_currency_id=${fromCurrency.value}&to_currency_id=${toCurrency.value}`
+
+            );
+
+        const balanceData =
+            await balanceResponse.json();
+
+        document.getElementById(
+            'fromBalance'
+        ).innerHTML =
+
+            'الرصيد الحالي: <strong>' +
+            Number(
+                balanceData.from_balance
+            ).toLocaleString() +
+            '</strong>';
+
+        document.getElementById(
+            'toBalance'
+        ).innerHTML =
+
+            'الرصيد الحالي: <strong>' +
+            Number(
+                balanceData.to_balance
+            ).toLocaleString() +
+            '</strong>';
+
+        /*
+        ============================
+        سعر الصرف
+        ============================
+        */
+
+        const rateResponse =
+            await fetch(
+
+                `{{ route('cashbox-exchanges.get-rate') }}?from_currency_id=${fromCurrency.value}&to_currency_id=${toCurrency.value}`
+
+            );
+
+        const rateData =
+            await rateResponse.json();
+
+        if(rateData.success)
+        {
+            currentRate =
+                parseFloat(
+                    rateData.rate
+                );
+
+            reverseRate =
+                rateData.reverse;
+
+            document.getElementById(
+                'rateDisplay'
+            ).innerHTML =
+                rateData.display;
+        }
+        else
+        {
+            currentRate = 0;
+
+            reverseRate = false;
+
+            document.getElementById(
+                'rateDisplay'
+            ).innerHTML =
+                'لا يوجد سعر صرف';
+        }
+
+        calculateExchange();
+    }
+
+    function calculateExchange()
+    {
+        const amount =
+            parseFloat(
+                amountInput.value
+            ) || 0;
+
+        if(
+            currentRate <= 0
+        ){
+            document.getElementById(
+                'resultAmount'
+            ).innerHTML =
+                '0.00';
+
+            return;
+        }
+
+        let result = 0;
+
+        if(reverseRate)
+        {
+            result =
+                amount *
+                currentRate;
+        }
+        else
+        {
+            result =
+                amount /
+                currentRate;
+        }
+
+        document.getElementById(
+            'resultAmount'
+        ).innerHTML =
+            result.toFixed(2);
+
+        const summary =
+            document.getElementById(
+                'exchangeSummary'
+            );
+
+        if(summary)
+        {
+            summary.innerHTML =
+
+                `سيتم خصم ${amount.toFixed(2)}
+             وإضافة ${result.toFixed(2)}`;
+        }
+    }
+
+    fromCurrency.addEventListener(
+        'change',
+        loadExchangeData
+    );
+
+    toCurrency.addEventListener(
+        'change',
+        loadExchangeData
+    );
+
+    amountInput.addEventListener(
+        'input',
+        calculateExchange
+    );
+
 </script>

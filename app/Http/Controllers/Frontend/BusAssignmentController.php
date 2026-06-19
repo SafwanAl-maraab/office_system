@@ -52,8 +52,10 @@ class BusAssignmentController extends Controller
             ->where('branch_id',$branchId)
             ->get();
 
-        $drivers = Driver::where('branch_id',$branchId)
-            ->where('status','active')
+
+        $drivers = Driver::where('branch_id', $branchId)
+            ->where('type', 'regular')
+            ->where('status', 'active')
             ->get();
 
 

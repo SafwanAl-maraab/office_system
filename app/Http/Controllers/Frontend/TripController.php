@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\BusDriver;
+use App\Models\Driver;
 use Illuminate\Http\Request;
 
 use App\Models\Trip;
@@ -21,9 +23,13 @@ class TripController extends Controller
     public function index(Request $request)
     {
 
+        $branchId = auth()->user()->employee->branch_id;
+
+
         $search = $request->search;
 
         $trips = Trip::with(['bus','currency','bookings'])
+            ->where('branch_id', $branchId)
 
             ->when($search,function($query) use ($search){
 
@@ -41,6 +47,10 @@ class TripController extends Controller
             ->latest()
             ->paginate(12);
 
+        $drivers = Driver::where('branch_id', $branchId)
+            ->where('type', 'regular')
+            ->where('status', 'active')
+            ->get();
 
         $buses = Bus::where('status','active')->get();
 
@@ -50,7 +60,8 @@ class TripController extends Controller
             'trips',
             'buses',
             'currencies',
-            'search'
+            'search',
+            'drivers'
         ));
 
     }
@@ -66,6 +77,7 @@ class TripController extends Controller
     public function store(Request $request)
     {
 
+
         $request->validate([
 
             'bus_id' => 'required|exists:buses,id',
@@ -73,7 +85,7 @@ class TripController extends Controller
             'from_city' => 'required|string|max:255',
 
             'to_city' => 'required|string|max:255',
-
+            'driver_id'      => 'required|exists:drivers,id',
             'trip_date' => 'required|date',
 
             'trip_time' => 'required',
@@ -146,6 +158,15 @@ class TripController extends Controller
 
             'status' => 'inactive'
 
+        ]);
+
+        BusDriver::create([
+            'branch_id' => $branchId,
+            'bus_id'    => $request->bus_id,
+            'driver_id' => $request->driver_id,
+            'start_at'  => $request->trip_time, // يبدأ عمله مع وقت الرحلة
+            'end_at'    => null,                // مفتوح حتى تنتهي الرحلة
+            'active'    => true
         ]);
 
 
@@ -279,7 +300,7 @@ class TripController extends Controller
 
             $bus->update([
 
-                'status' => 'available'
+                'status' => 'active'
 
             ]);
 

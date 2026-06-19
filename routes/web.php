@@ -2,9 +2,12 @@
 
 
 use App\Http\Controllers\Frontend\BusController;
+use App\Http\Controllers\Frontend\CashboxController;
+use App\Http\Controllers\Frontend\CashboxExchangeController;
 use App\Http\Controllers\Frontend\ClientVoucherController;
 use App\Http\Controllers\Frontend\ExchangeRateController;
 use App\Http\Controllers\Frontend\ExpenseController;
+use App\Http\Controllers\Frontend\FinancialReportController;
 use App\Http\Controllers\Frontend\VoucherSettlementController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -527,7 +530,81 @@ Route::middleware(['auth'])
         );
 
     });
+Route::middleware(['auth'])->prefix('')
 
+    ->group(function () {
+
+        Route::get(
+
+            '/cashboxes/{currency}/transactions',
+
+            [CashboxController::class,'transactions']
+
+        )->name(
+            'cashboxes.transactions'
+
+        );
+
+
+
+    });
+
+
+Route::middleware(['auth'])->prefix('cashbox-exchanges')
+    ->name('cashbox-exchanges.')
+    ->group(function () {
+
+        Route::get(
+            '/',
+            [CashboxExchangeController::class,'index']
+        )->name('index');
+
+        Route::post(
+            '/',
+            [CashboxExchangeController::class,'store']
+        )->name('store');
+
+
+        Route::get(
+            '/get-balances',
+            [CashboxExchangeController::class,'getBalances']
+        )->name('get-balances');
+
+        Route::get(
+            '/get-rate',
+            [CashboxExchangeController::class,'getRate']
+        )->name('get-rate');
+
+        Route::post(
+            '/{exchange}/reverse',
+            [CashboxExchangeController::class,'reverse']
+        )->name('reverse');
+    });
+
+
+Route::prefix('dashboard')
+    ->middleware(['auth'])
+    ->group(function () {
+
+        Route::resource(
+            'incomes',
+            \App\Http\Controllers\Frontend\IncomeController::class
+        )->only([
+            'index',
+            'store'
+        ]);
+
+        Route::get(
+            '/reports/financial',
+            [FinancialReportController::class,'index']
+        )->name('reports.financial');
+
+        Route::get(
+            '/reports/financial/pdf',
+            [FinancialReportController::class,'exportPdf']
+        )->name('financial-report.pdf');
+
+    });
 //end safwan
 
 

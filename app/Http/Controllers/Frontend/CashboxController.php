@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashboxTransaction;
 use Illuminate\Http\Request;
 use App\Models\BranchCashbox;
 use App\Models\Currency;
@@ -116,4 +117,78 @@ class CashboxController extends Controller
 
         return back()->with('success', 'تم تعديل بيانات العملة');
     }
+
+    public function transactions(Request $request, Currency $currency)
+    {
+        $branchId = auth()->user()->employee->branch_id;
+
+        // جلب التواريخ من طلب البحث
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        // 1. جلب كافة حركات العملة تصاعدياً لحساب الأرصدة التتابعية بدقة
+        $allTransactions = CashboxTransaction::with(['employee'])
+            ->where('branch_id', $branchId)
+            ->where('currency_id', $currency->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $runningBalance = 0;
+        $openingBalance = 0;
+        $totalIn = 0;
+        $totalOut = 0;
+        $filteredTransactions = collect();
+
+        // 2. معالجة الحسابات الدفترية وفلترة النطاق الزمني لحظياً
+        foreach ($allTransactions as $transaction) {
+            $transaction->balance_before = $runningBalance;
+            $runningBalance += $transaction->amount;
+            $transaction->running_balance = $runningBalance;
+
+            $txDate = $transaction->created_at->toDateString();
+            $keep = true;
+
+            if ($dateFrom && $txDate < $dateFrom) {
+                $keep = false;
+                // حساب الرصيد الافتتاحي (كل ما هو قبل تاريخ البداية المختار)
+                $openingBalance += $transaction->amount;
+            }
+            if ($dateTo && $txDate > $dateTo) {
+                $keep = false;
+            }
+
+            if ($keep) {
+                $filteredTransactions->push($transaction);
+
+                // حساب إجمالي الوارد والمنصرف للحركات المفلترة فقط
+                if ($transaction->amount > 0) {
+                    $totalIn += $transaction->amount;
+                } else {
+                    $totalOut += abs($transaction->amount);
+                }
+            }
+        }
+
+        // 3. عكس الحركات المفلترة لعرض الأحدث في الأعلى دائماً في الجدول
+        $transactions = $filteredTransactions->reverse()->values();
+
+        // جلب الرصيد الإجمالي الفعلي الحالي للخزنة
+        $balance = BranchCashbox::where('branch_id', $branchId)
+            ->where('currency_id', $currency->id)
+            ->value('balance') ?? 0;
+
+        return view('frontend.cashboxes.transactions', compact(
+            'currency',
+            'transactions',
+            'balance',
+            'openingBalance',
+            'totalIn',
+            'totalOut',
+            'dateFrom',
+            'dateTo'
+        ));
+    }
 }
+
+

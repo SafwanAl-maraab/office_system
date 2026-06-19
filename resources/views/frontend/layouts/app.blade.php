@@ -82,23 +82,23 @@
 </div>
 
 <!-- GLOBAL MODAL ROOT -->
-<div x-show="modalOpen"
-     x-transition
-     class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
-     @click.self="modalOpen = false">
+{{--<div x-show="modalOpen"--}}
+{{--     x-transition--}}
+{{--     class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"--}}
+{{--     @click.self="modalOpen = false">--}}
 
-    <div class="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl">
-        <h2 class="text-lg font-bold mb-4">عنوان</h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            محتوى المودال
-        </p>
-        <button @click="modalOpen = false"
-                class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-            إغلاق
-        </button>
-    </div>
+{{--    <div class="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-lg shadow-2xl">--}}
+{{--        <h2 class="text-lg font-bold mb-4">عنوان</h2>--}}
+{{--        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">--}}
+{{--            محتوى المودال--}}
+{{--        </p>--}}
+{{--        <button @click="modalOpen = false"--}}
+{{--                class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">--}}
+{{--            إغلاق--}}
+{{--        </button>--}}
+{{--    </div>--}}
 
-</div>
+{{--</div>--}}
 
 
 <!-- TOAST NOTIFICATION -->
@@ -109,107 +109,116 @@
 >
 
     <!-- SUCCESS -->
-    @if(session('success'))
-        <div x-show="visible"
-             x-transition
-             class="relative w-80 bg-white dark:bg-gray-900 border border-green-200 dark:border-green-700 rounded-2xl shadow-2xl overflow-hidden">
+    <div x-data="toastHandler()"
+         class="fixed top-5 left-5 z-[9999] flex flex-col gap-3">
 
-            <!-- Progress Bar -->
-            <div class="absolute top-0 right-0 h-1 bg-green-500 transition-all"
-                 :style="'width: '+progress+'%'"></div>
+        @if(session('success'))
+            <div x-show="visible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 -translate-y-4 sm:translate-x-2"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="relative w-80 bg-white dark:bg-gray-900 border border-green-200 dark:border-green-700 rounded-2xl shadow-2xl overflow-hidden">
 
-            <div class="p-5 flex items-start gap-3">
+                <div class="absolute top-0 right-0 h-1 bg-green-500 transition-all duration-100"
+                     :style="'width: ' + progress + '%'"></div>
 
-                <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400">
-                        ✓
+                <div class="p-5 flex items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-lg">
+                            ✓
+                        </div>
                     </div>
-                </div>
 
-                <div class="flex-1">
-                    <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                        نجاح العملية
-                    </h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {{ session('success') }}
-                    </p>
-                </div>
-
-                <button @click="close()" class="text-gray-400 hover:text-gray-600">
-                    ✕
-                </button>
-
-            </div>
-        </div>
-    @endif
-
-    <!-- ERROR -->
-    @if(session('error'))
-        <div x-show="visible"
-             x-transition
-             class="relative w-80 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-700 rounded-2xl shadow-2xl overflow-hidden">
-
-            <div class="absolute top-0 right-0 h-1 bg-red-500 transition-all"
-                 :style="'width: '+progress+'%'"></div>
-
-            <div class="p-5 flex items-start gap-3">
-
-                <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900 flex items-center justify-center text-red-600 dark:text-red-400">
-                        !
+                    <div class="flex-1">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                            نجاح العملية
+                        </h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {{ session('success') }}
+                        </p>
                     </div>
+
+                    <button @click="close()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
                 </div>
-
-                <div class="flex-1">
-                    <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                        خطأ
-                    </h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {{ session('error') }}
-                    </p>
-                </div>
-
-                <button @click="close()" class="text-gray-400 hover:text-gray-600">
-                    ✕
-                </button>
-
             </div>
-        </div>
-    @endif
+        @endif
 
-</div>
+        @if(session('error'))
+            <div x-show="visible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 -translate-y-4 sm:translate-x-2"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="relative w-80 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-700 rounded-2xl shadow-2xl overflow-hidden">
 
-<script>
-    function toastHandler(){
-        return {
-            visible:true,
-            progress:100,
-            timer:null,
+                <div class="absolute top-0 right-0 h-1 bg-red-500 transition-all duration-100"
+                     :style="'width: ' + progress + '%'"></div>
 
-            init(){
-                this.startTimer()
-            },
+                <div class="p-5 flex items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-lg">
+                            ⚠️
+                        </div>
+                    </div>
 
-            startTimer(){
-                let duration = 4000;
-                let step = 100 / (duration / 100);
+                    <div class="flex-1">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                            فشل الإجراء
+                        </h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {{ session('error') }}
+                        </p>
+                    </div>
 
-                this.timer = setInterval(()=>{
-                    this.progress -= step;
-                    if(this.progress <= 0){
-                        this.close();
+                    <button @click="close()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        @endif
+
+    </div>
+
+    <script>
+        function toastHandler() {
+            return {
+                visible: {{ (session('success') || session('error')) ? 'true' : 'false' }},
+                progress: 100,
+                timer: null,
+
+                init() {
+                    if (this.visible) {
+                        this.startTimer();
                     }
-                },100);
-            },
+                },
 
-            close(){
-                this.visible = false;
-                clearInterval(this.timer);
+                startTimer() {
+                    let duration = 4000;
+                    let intervalTime = 50;
+                    let step = 100 / (duration / intervalTime);
+
+                    this.timer = setInterval(() => {
+                        this.progress -= step;
+                        if (this.progress <= 0) {
+                            this.close();
+                        }
+                    }, intervalTime);
+                },
+
+                close() {
+                    this.visible = false;
+                    clearInterval(this.timer);
+                }
             }
         }
-    }
-</script>
-
+    </script>
 <script>
     function layout(){
         return {

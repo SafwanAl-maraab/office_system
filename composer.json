@@ -9,9 +9,11 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "*",
         "barryvdh/laravel-snappy": "*",
-        "khaled.alshamaa/ar-php": "*",
+        "khaled.alshamaa/ar-php": "^7.0",
         "laravel/framework": "^11.31",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "maatwebsite/excel": "*",
+        "spatie/laravel-permission": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

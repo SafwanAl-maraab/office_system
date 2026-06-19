@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Spatie\Permission\Models\Role;
+
 class Employee extends Model
 {
     //
@@ -29,7 +31,7 @@ class Employee extends Model
 
     public function role()
     {
-        return $this->belongsTo(\App\Models\Role::class);
+        return $this->belongsTo(\Spatie\Permission\Models\Role::class, 'role_id');
     }
 
     public function visas()

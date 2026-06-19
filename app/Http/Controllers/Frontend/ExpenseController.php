@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashboxTransaction;
 use App\Models\Expense;
 use App\Models\BranchCashbox;
 use App\Models\Currency;
@@ -83,7 +84,7 @@ class ExpenseController extends Controller
 
         DB::transaction(function() use ($request,$branchId,$cashbox){
 
-            Expense::create([
+            $expense =  Expense::create([
                 'branch_id' => $branchId,
                 'amount' => $request->amount,
                 'currency_id' => $request->currency_id,
@@ -93,6 +94,36 @@ class ExpenseController extends Controller
 
             $cashbox->balance -= $request->amount;
             $cashbox->save();
+
+            CashboxTransaction::create([
+
+                'branch_id' =>
+                    $branchId,
+
+                'currency_id' =>
+                    $request->currency_id,
+
+                'amount' =>
+                    -$request->amount,
+
+                'type' =>
+                    'expense',
+
+                'reference_type' =>
+                    'expense',
+
+                'reference_id' =>
+                    $expense->id,
+
+                'notes' =>
+                    $request->description,
+
+                'created_by' =>
+                    auth()->user()
+                        ->employee
+                        ->id
+
+            ]);
 
         });
 

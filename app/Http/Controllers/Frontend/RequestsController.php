@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Models\RequestType;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class RequestsController extends Controller
 {
@@ -77,71 +78,78 @@ class RequestsController extends Controller
 
         ));
     }
+
     public function store(Request $request)
     {
         $branchId = auth()->user()->employee->branch_id;
         $employeeId = auth()->user()->employee->id;
 
+        // 1. التحقق من البيانات المرسلة (بعد حذف confirm_price)
         $request->validate([
             'client_id' => 'required|exists:clients,id',
             'request_type_id' => 'required|exists:request_types,id',
-            'confirm_price' => 'required|numeric|min:0',
             'cost_price' => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request, $branchId, $employeeId) {
+        try {
+            // بدء المعاملة الآمنة لقاعدة البيانات
+            DB::transaction(function () use ($request, $branchId, $employeeId) {
 
-            // جلب نوع الطلب والتحقق أنه تابع لنفس الفرع
-            $requestType = RequestType::where('id', $request->request_type_id)
-                ->where('branch_id', $branchId)
-                ->firstOrFail();
+                // جلب نوع الطلب والتحقق أنه تابع لنفس الفرع
+                $requestType = RequestType::where('id', $request->request_type_id)
+                    ->where('branch_id', $branchId)
+                    ->firstOrFail();
 
-            // التحقق من تطابق السعر
-            if ((float)$request->confirm_price !== (float)$requestType->price) {
-                abort(403, 'السعر غير مطابق للسعر المحدد.');
-            }
+                // 2. التحقق من أن سعر البيع أعلى من التكلفة (اعتماداً على سعر النوع الفعلي)
+                if ((float)$requestType->price <= (float)$request->cost_price) {
+                    // نلقي استثناء مخصص ليتم التراجع عن أي عملية واصطياده في الـ catch
+                    throw new Exception('سعر البيع المحدد لهذا الطلب أقل من أو يساوي سعر التكلفة.');
+                }
 
+                // توليد رقم طلب تسلسلي
+                $lastId = \App\Models\Request::max('id') + 1;
+                $requestNumber = 'REQ-' . date('Y') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
 
-            if ($request->confirm_price <= $request->cost_price) {
-                abort(403, 'السعر اكبر من التكلفة.');
-            }
+                // إنشاء الطلب
+                $newRequest = \App\Models\Request::create([
+                    'branch_id' => $branchId,
+                    'client_id' => $request->client_id,
+                    'request_type_id' => $requestType->id,
+                    'request_number' => $requestNumber,
+                    'request_date' => now(),
+                    'status' => 'new',
+                    'received_by' => $employeeId,
+                    'notes' => $request->notes,
+                ]);
 
+                // إنشاء الفاتورة تلقائيًا (تم استبدال $request->confirm_price بسعر النوع الأصلي)
+                Invoice::create([
+                    'branch_id' => $branchId,
+                    'client_id' => $request->client_id,
+                    'reference_type' => 'request',
+                    'reference_id' => $newRequest->id,
+                    'total_amount' => $requestType->price,
+                    'paid_amount' => 0,
+                    'remaining_amount' => $requestType->price,
+                    'cost' => $request->cost_price,
+                    'currency_id' => $requestType->currency_id,
+                    'status' => 'unpaid',
+                    'is_refund' => false,
+                ]);
+            });
 
-            // توليد رقم طلب تسلسلي
-            $lastId = \App\Models\Request::max('id') + 1;
-            $requestNumber = 'REQ-' . date('Y') . '-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+            // في حال النجاح: التوجيه لصفحة الاندكس مع رسالة النجاح للـ Toast
+            return redirect()
+                ->route('dashboard.requests.index')
+                ->with('success', 'تم إنشاء الطلب والفاتورة بنجاح.');
 
-            // إنشاء الطلب
-            $newRequest = \App\Models\Request::create([
-                'branch_id' => $branchId,
-                'client_id' => $request->client_id,
-                'request_type_id' => $requestType->id,
-                'request_number' => $requestNumber,
-                'request_date' => now(),
-                'status' => 'new',
-                'received_by' => $employeeId,
-                'notes' => $request->notes,
-            ]);
-
-            // إنشاء الفاتورة تلقائيًا
-            Invoice::create([
-                'branch_id' => $branchId,
-                'client_id' => $request->client_id,
-                'reference_type' => 'request',
-                'reference_id' => $newRequest->id,
-                'total_amount' => $requestType->price,
-                'paid_amount' => 0,
-                'remaining_amount' => $requestType->price,
-                'cost' => $request->cost_price,
-                'currency_id' => $requestType->currency_id,
-                'status' => 'unpaid',
-                'is_refund' => false,
-            ]);
-        });
-
-        return redirect()
-            ->route('dashboard.requests.index')
-            ->with('success', 'تم إنشاء الطلب بنجاح.');
+        } catch (Exception $e) {
+            // في حال حدوث أي خطأ: العودة للخلف مع رسالة الخطأ المتوافقة مع الـ Toast
+            return redirect()
+                ->back()
+                ->withInput() // لإبقاء البيانات المدخلة في الحقول منعاً لإعادة كتابتها
+                ->with('error', $e->getMessage());
+        }
     }
 
     public function show($id)
