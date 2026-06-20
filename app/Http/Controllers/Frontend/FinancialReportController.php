@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\BranchCashbox;
 use App\Models\CashboxExchange;
+use App\Models\Currency;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\Info;
@@ -12,6 +13,8 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use ArPHP\I18N\Arabic; // 💡 استدعاء المكتبة العربية
+
 
 class FinancialReportController extends Controller
 {
@@ -538,7 +541,7 @@ class FinancialReportController extends Controller
 
         if ($info) {
             $info->office_name = $arabic->utf8Glyphs($info->office_name);
-            $info->address = $arabic->utf8Glyphs($info->address);
+            $info->a7ddress = $arabic->utf8Glyphs($info->address);
         }
 
         $pdf = Pdf::loadView('frontend.reports.pdf.financial', $viewData);
@@ -997,6 +1000,334 @@ class FinancialReportController extends Controller
             'latestExpenses' => $latestExpenses,
             'latestIncomes' => $latestIncomes,
             'latestExchanges' => $latestExchanges,
+        ];
+    }
+
+
+    public function profitAnalysis(
+        Request $request
+    )
+    {
+        return view(
+
+            'frontend.reports.profit-analysis',
+
+            $this->buildProfitAnalysis(
+                $request
+            )
+
+        );
+    }
+
+
+
+
+
+    public function profitAnalysisPdf(Request $request)
+    {
+        $branchId = auth()->user()->employee->branch_id ?? 1;
+        $data = $this->buildProfitAnalysis($request);
+
+        // تهيئة مكتبة معالجة النصوص العربية
+        $arabic = new Arabic();
+
+        // 💡 مصفوفة العناوين الثابتة المترجمة للـ PDF
+        $data['labels'] = [
+            'title'            => $arabic->utf8Glyphs('تقرير تحليل الأرباح'),
+            'from'             => $arabic->utf8Glyphs('من:'),
+            'to'               => $arabic->utf8Glyphs('إلى:'),
+            'sales'            => $arabic->utf8Glyphs('إجمالي Mبيعات'),
+            'cost'             => $arabic->utf8Glyphs('إجمالي التكلفة'),
+            'expected_profit'  => $arabic->utf8Glyphs('الربح المتوقع'),
+            'confirmed_profit' => $arabic->utf8Glyphs('الربح المؤكد'),
+            'remaining'        => $arabic->utf8Glyphs('المتبقي'),
+            'section_title'    => $arabic->utf8Glyphs('تحليل الأرباح حسب النشاط'),
+            'th_activity'      => $arabic->utf8Glyphs('النشاط'),
+            'th_count'         => $arabic->utf8Glyphs('عدد العمليات'),
+            'activity_visas'   => $arabic->utf8Glyphs('التأشيرات'),
+            'activity_bookings'=> $arabic->utf8Glyphs('الحجوزات'),
+            'activity_services'=> $arabic->utf8Glyphs('الطلبات'),
+        ];
+
+        // تحويل البيانات الديناميكية القادمة من قاعدة البيانات (اسم المكتب)
+        if (isset($data['info'])) {
+            $data['info']->office_name = $arabic->utf8Glyphs($data['info']->office_name);
+        }
+
+        // شحن البيانات للملف
+        $pdf = Pdf::loadView('frontend.reports.profit.pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->stream('profit-analysis-' . now()->format('YmdHis') . '.pdf');
+    }
+
+    private function buildProfitAnalysis(
+        Request $request
+    )
+    {
+        $branchId =
+            auth()->user()
+                ->employee
+                ->branch_id;
+
+
+        $from =
+            $request->date_from
+                ?: now()->startOfMonth()->toDateString();
+
+        $to =
+            $request->date_to
+                ?: now()->toDateString();
+
+        $currencies =
+            Currency::where(
+                'status',
+                1
+            )->orderBy('name')->get();
+
+        $currencyId =
+            $request->currency_id;
+        /*
+        |--------------------------------------------------------------------------
+        | استعلام أساسي
+        |--------------------------------------------------------------------------
+        */
+
+        $baseInvoices =
+            Invoice::where(
+                'branch_id',
+                $branchId
+            );
+
+        if($currencyId)
+        {
+            $baseInvoices->where(
+                'currency_id',
+                $currencyId
+            );
+        }
+
+        $baseInvoices
+            ->where(
+                'is_refund',
+                false
+            )
+            ->whereNotIn(
+                'status',
+                [
+                    'cancelled',
+                    'rejected'
+                ]
+            )
+            ->whereBetween(
+                'created_at',
+                [
+                    $from.' 00:00:00',
+                    $to.' 23:59:59'
+                ]
+            );
+        /*
+        |--------------------------------------------------------------------------
+        | دالة تحليل نوع واحد
+        |--------------------------------------------------------------------------
+        */
+
+        $calculate = function($referenceType) use ($baseInvoices){
+
+            $invoices =
+                (clone $baseInvoices)
+                    ->where(
+                        'reference_type',
+                        $referenceType
+                    )
+                    ->get();
+
+            $count = 0;
+
+            $sales = 0;
+
+            $cost = 0;
+
+            $expectedProfit = 0;
+
+            $confirmedProfit = 0;
+
+            $remaining = 0;
+
+            foreach($invoices as $invoice){
+
+                $count++;
+
+                $sales +=
+                    $invoice->total_amount;
+
+                $cost +=
+                    $invoice->cost;
+
+                $remaining +=
+                    $invoice->remaining_amount;
+
+                /*
+                |--------------------------------------------------------------------------
+                | الربح المتوقع
+                |--------------------------------------------------------------------------
+                */
+
+                $expectedProfit +=
+                    (
+                        $invoice->total_amount
+                        -
+                        $invoice->cost
+                    );
+
+                /*
+                |--------------------------------------------------------------------------
+                | الربح المؤكد
+                |--------------------------------------------------------------------------
+                */
+
+                if(
+                    $invoice->total_amount > 0
+                ){
+
+                    $ratio =
+                        $invoice->paid_amount
+                        /
+                        $invoice->total_amount;
+
+                    $recoveredCost =
+                        $invoice->cost
+                        *
+                        $ratio;
+
+                    $confirmedProfit +=
+                        (
+                            $invoice->paid_amount
+                            -
+                            $recoveredCost
+                        );
+                }
+            }
+
+            return [
+
+                'count' =>
+                    $count,
+
+                'sales' =>
+                    $sales,
+
+                'cost' =>
+                    $cost,
+
+                'expected_profit' =>
+                    $expectedProfit,
+
+                'confirmed_profit' =>
+                    $confirmedProfit,
+
+                'remaining' =>
+                    $remaining,
+            ];
+        };
+
+        /*
+        |--------------------------------------------------------------------------
+        | تحليل الأنشطة
+        |--------------------------------------------------------------------------
+        */
+
+        $analysis = [
+
+            'visas' =>
+
+                $calculate(
+                    'visa'
+                ),
+
+            'bookings' =>
+
+                $calculate(
+                    'booking'
+                ),
+
+            'services' =>
+
+                $calculate(
+                    'request'
+                ),
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | إجماليات عامة
+        |--------------------------------------------------------------------------
+        */
+
+        $totals = [
+
+            'sales' =>
+
+                collect($analysis)
+                    ->sum('sales'),
+
+            'cost' =>
+
+                collect($analysis)
+                    ->sum('cost'),
+
+            'expected_profit' =>
+
+                collect($analysis)
+                    ->sum('expected_profit'),
+
+            'confirmed_profit' =>
+
+                collect($analysis)
+                    ->sum('confirmed_profit'),
+
+            'remaining' =>
+
+                collect($analysis)
+                    ->sum('remaining'),
+
+            'count' =>
+
+                collect($analysis)
+                    ->sum('count'),
+        ];
+        $info = Info::where('branch_id', $branchId)->first();
+
+        $selectedCurrency = null;
+
+        if($currencyId)
+        {
+            $selectedCurrency =
+                Currency::find(
+                    $currencyId
+                );
+        }
+        return [
+
+            'analysis' => $analysis,
+
+            'totals' => $totals,
+
+            'from' => $from,
+
+            'to' => $to,
+
+            'info' => $info,
+
+            'currencies' =>
+                $currencies,
+
+            'currencyId' =>
+                $currencyId,
+
+            'selectedCurrency' =>
+                $selectedCurrency
+
         ];
     }
 

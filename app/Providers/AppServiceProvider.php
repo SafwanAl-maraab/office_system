@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // مشاركة البيانات تلقائياً مع الهيدر واللايوت
-        View::composer( 'frontend.layouts.header', function ($view) {
+        View::composer(['frontend.dashboard.partials.hero' ,'frontend.layouts.header'], function ($view) {
             $info = Info::first();
             $branchName = null;
 

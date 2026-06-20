@@ -187,6 +187,121 @@ class ClientController extends Controller
 
         $rawLogs = $logsQuery->get();
 
+        $payments = Payment::with([
+            'currency',
+            'employee',
+            'invoice'
+        ])
+            ->where('client_id', $client->id);
+
+        if ($request->filled('currency_id')) {
+            $payments->where(
+                'currency_id',
+                $request->currency_id
+            );
+        }
+
+        if ($request->filled('type'))
+        {
+            if ($request->type == 'invoice_payment')
+            {
+                $payments->where(
+                    'payment_method',
+                    'cash'
+                );
+            }
+            elseif ($request->type == 'refund_cash')
+            {
+                $payments->where(
+                    'payment_method',
+                    'refund'
+                );
+            }
+            else
+            {
+                // إذا اختار أي نوع آخر
+                // لا نعرض أي Payments
+
+                $payments->whereRaw('1 = 0');
+            }
+        }
+
+        $payments = $payments->get();
+
+
+        foreach ($payments as $payment) {
+
+            if ($payment->payment_method === 'refund')
+            {
+                $payment->type =
+                    'refund_cash';
+
+                $payment->type_label =
+                    'مسترجع نقدي';
+
+
+                $payment->operation_title =
+                    'مسترجع نقدي';
+
+                $payment->operation_details =
+                    'استرجاع نقدي للفاتورة #'
+                    .$payment->invoice_id;
+            }
+            else
+            {
+                $payment->type =
+                    'invoice_payment';
+
+                $payment->type_label =
+                    'دفعة فاتورة';
+
+                $payment->operation_title =
+                    'دفعة فاتورة';
+
+                $payment->operation_details =
+                    'سداد نقدي للفاتورة #'
+                    .$payment->invoice_id;
+            }
+
+            $payment->running_balance = null;
+
+            $payment->invoice_number =
+                $payment->invoice_id;
+
+            if ($payment->payment_method === 'refund')
+            {
+                $payment->type = 'refund_cash';
+
+                $payment->type_label = 'مسترجع نقدي';
+
+                $payment->operation_title = 'مسترجع نقدي';
+
+                $payment->operation_details =
+                    'استرجاع للفاتورة #'
+                    .$payment->invoice_id;
+            }
+            else
+            {
+                $payment->type = 'invoice_payment';
+
+                $payment->type_label = 'دفعة فاتورة';
+
+                $payment->operation_title = 'دفعة فاتورة';
+
+                $payment->operation_details =
+                    'سداد للفاتورة #'
+                    .$payment->invoice_id;
+            }
+            
+            $payment->source_type =
+                'payment';
+            $payment->notes =
+                $payment->payment_method === 'refund'
+                    ? 'استرجاع نقدي'
+                    : 'سداد نقدي';
+        }
+
+
         // 💡 حل مشكلة N+1 المقترحة والذكية من طرفك
         $invoiceIds = $rawLogs->where('reference_type', 'invoice')
             ->pluck('reference_id')
@@ -245,10 +360,14 @@ class ClientController extends Controller
                 $log->operation_title = 'سند عميل';
                 $log->operation_details = $log->notes ?? 'قيد سند مالي رسمي';
             }
+
         }
 
         // 3. عكس الحركات الماليّة ليظهر أحدث إجراء مالي في الأعلى بالـ Blade
-        $logs = $rawLogs->reverse();
+        $logs = $rawLogs
+            ->concat($payments)
+            ->sortByDesc('created_at')
+            ->values();
 
         // 4. استخراج الأرصدة الإجمالية المجمعة حسب العملات
         $balances = [];

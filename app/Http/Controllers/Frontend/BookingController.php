@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgentTransaction;
+use App\Models\CashboxTransaction;
 use App\Models\ClientBalanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -239,9 +240,42 @@ class BookingController extends Controller
 
                 if ($cashbox) {
 
-                    $cashbox->increment('balance',$paymentAmount);
+                    $cashbox->increment(
+                        'balance',
+                        $paymentAmount
+                    );
 
+                    CashboxTransaction::create([
+
+                        'branch_id' =>
+                            $branchId,
+
+                        'currency_id' =>
+                            $trip->currency_id,
+
+                        'amount' =>
+                            $paymentAmount,
+
+                        'type' =>
+                            'invoice_payment',
+
+                        'reference_type' =>
+                            'booking',
+
+                        'reference_id' =>
+                            $booking->id,
+
+                        'notes' =>
+                            'دفعة حجز رقم #'.$booking->id,
+
+                        'created_by' =>
+                            auth()->user()
+                                ->employee
+                                ->id
+
+                    ]);
                 }
+
 
             }
 
@@ -643,6 +677,37 @@ class BookingController extends Controller
                             'balance',
                             $paidAmount
                         );
+
+                        CashboxTransaction::create([
+
+                            'branch_id' =>
+                                $invoice->branch_id,
+
+                            'currency_id' =>
+                                $invoice->currency_id,
+
+                            'amount' =>
+                                -$paidAmount,
+
+                            'type' =>
+                                'refund',
+
+                            'reference_type' =>
+                                'booking',
+
+                            'reference_id' =>
+                                $booking->id,
+
+                            'notes' =>
+                                'استرجاع حجز ملغي',
+
+                            'created_by' =>
+                                auth()->user()
+                                    ->employee
+                                    ->id
+
+                        ]);
+
                     }
 
                     /*
