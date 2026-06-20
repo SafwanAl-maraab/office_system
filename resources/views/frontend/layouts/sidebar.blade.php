@@ -567,9 +567,10 @@ $agentsActive = request()->routeIs('agents.*');
 
             @php
                 $AccountActive =
-                    request()->routeIs('reports.financial.*') ;
-//                   request()->routeIs('dashboard.travels.*') ||
-//                    request()->routeIs('dashboard.request-types.*');
+                    request()->routeIs('reports.*')
+       //            request()->routeIs('dashboard.travels.*') ||
+       ||
+                    request()->routeIs('reports.profit-analysis.*');
             @endphp
 
             <button
@@ -603,6 +604,15 @@ $agentsActive = request()->routeIs('agents.*');
                 ? 'bg-blue-500 text-white'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                 التقارير
+                </a>
+
+
+                <a href="{{ route('reports.profit-analysis') }}"
+                   class="block px-3 py-2 rounded-xl text-sm transition
+           {{ request()->routeIs('reports.profit-analysis.*')
+                ? 'bg-blue-500 text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                   تحليل الارباح
                 </a>
 
 

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 
 use App\Models\Booking;
+use App\Models\BranchCashbox;
+use App\Models\CashboxTransaction;
 use App\Models\Client;
 use App\Models\ClientBalanceLog;
 use App\Models\Invoice;
@@ -256,469 +258,590 @@ return response()->json([
         $request->validate([
 
 
-    'client_id'          => 'required|exists:clients,id',
+            'client_id' => 'required|exists:clients,id',
 
-    'invoice_id'         => 'required|exists:invoices,id',
+            'invoice_id' => 'required|exists:invoices,id',
 
-    'source_currency_id' => 'required|exists:currencies,id',
+            'source_currency_id' => 'required|exists:currencies,id',
 
-    'amount'             => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|min:0.01',
 
-    'notes'              => 'nullable|string'
-]);
+            'notes' => 'nullable|string'
+        ]);
 
-DB::beginTransaction();
+        DB::beginTransaction();
 
-try {
+        try {
 
-    $employee =
-        auth()->user()->employee;
+            $employee =
+                auth()->user()->employee;
 
-    $invoice =
-        Invoice::with('currency')
-            ->findOrFail(
-                $request->invoice_id
-            );
+            $invoice =
+                Invoice::with('currency')
+                    ->findOrFail(
+                        $request->invoice_id
+                    );
 
-    /*
-    |--------------------------------------------------------------------------
-    | حماية العميل
-    |--------------------------------------------------------------------------
-    */
+            /*
+            |--------------------------------------------------------------------------
+            | حماية العميل
+            |--------------------------------------------------------------------------
+            */
 
-    if(
-        $invoice->client_id
-        !=
-        $request->client_id
-    ){
-        throw new \Exception(
-            'الفاتورة لا تخص العميل'
-        );
-    }
+            if (
+                $invoice->client_id
+                !=
+                $request->client_id
+            ) {
+                throw new \Exception(
+                    'الفاتورة لا تخص العميل'
+                );
+            }
 
-    /*
-    |--------------------------------------------------------------------------
-    | حماية الفاتورة
-    |--------------------------------------------------------------------------
-    */
+            /*
+            |--------------------------------------------------------------------------
+            | حماية الفاتورة
+            |--------------------------------------------------------------------------
+            */
 
 
-    // 1. التحقق من حالة الحجز (Booking)
-    if ($invoice->reference_type === 'booking' && $invoice->booking && $invoice->booking->status === 'cancelled') {
-        throw new \Exception('لا يمكن تسوية فاتورة حجز ملغي');
-    }
+            // 1. التحقق من حالة الحجز (Booking)
+            if ($invoice->reference_type === 'booking' && $invoice->booking && $invoice->booking->status === 'cancelled') {
+                throw new \Exception('لا يمكن تسوية فاتورة حجز ملغي');
+            }
 
 // 2. التحقق من حالة التأشيرة (Visa)
-    if ($invoice->reference_type === 'visa' && $invoice->visa && $invoice->visa->status === 'cancelled') {
-        throw new \Exception('لا يمكن تسوية فاتورة تأشيرة ملغية');
-    }
+            if ($invoice->reference_type === 'visa' && $invoice->visa && $invoice->visa->status === 'cancelled') {
+                throw new \Exception('لا يمكن تسوية فاتورة تأشيرة ملغية');
+            }
 
 // 3. التحقق من حالة الطلب (Request)
-    if ($invoice->reference_type === 'request' && $invoice->request && $invoice->request->status === 'cancelled') {
-        throw new \Exception('لا يمكن تسوية فاتورة طلب ملغي');
-    }
+            if ($invoice->reference_type === 'request' && $invoice->request && $invoice->request->status === 'cancelled') {
+                throw new \Exception('لا يمكن تسوية فاتورة طلب ملغي');
+            }
 
 
-    if(
-        $invoice->remaining_amount <= 0
-    ){
-        throw new \Exception(
-            'الفاتورة مسددة بالكامل'
-        );
-    }
+            if (
+                $invoice->remaining_amount <= 0
+            ) {
+                throw new \Exception(
+                    'الفاتورة مسددة بالكامل'
+                );
+            }
 
-    $sourceCurrencyId =
-        (int)$request->source_currency_id;
+            $sourceCurrencyId =
+                (int)$request->source_currency_id;
 
-    $targetCurrencyId =
-        (int)$invoice->currency_id;
+            $targetCurrencyId =
+                (int)$invoice->currency_id;
 
-    /*
-    |--------------------------------------------------------------------------
-    | نفس العملة
-    |--------------------------------------------------------------------------
-    */
+            /*
+            |--------------------------------------------------------------------------
+            | نفس العملة
+            |--------------------------------------------------------------------------
+            */
 
-    if(
-        $sourceCurrencyId
-        ==
-        $targetCurrencyId
-    ){
-
-        $balance =
-            ClientBalanceService::getBalance(
-                $request->client_id,
+            if (
                 $sourceCurrencyId
-            );
+                ==
+                $targetCurrencyId
+            ) {
 
-        if(
-            $balance <
-            $request->amount
-        ){
-            throw new \Exception(
-                'الرصيد غير كافٍ'
-            );
-        }
-
-        $settlementAmount =
-            min(
-                $request->amount,
-                $invoice->remaining_amount
-            );
-
-        ClientBalanceLog::create([
-
-            'client_id' =>
-                $request->client_id,
-
-            'currency_id' =>
-                $sourceCurrencyId,
-
-            'amount' =>
-                -$settlementAmount,
-
-            'type' =>
-                'settlement',
-
-            'reference_type' =>
-                'invoice',
-
-            'reference_id' =>
-                $invoice->id,
-
-            'notes' =>
-                $request->notes,
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        Payment::create([
-
-            'branch_id' =>
-                $employee->branch_id,
-
-            'client_id' =>
-                $request->client_id,
-
-            'invoice_id' =>
-                $invoice->id,
-
-            'amount' =>
-                $settlementAmount,
-
-            'currency_id' =>
-                $invoice->currency_id,
-
-            'payment_method' =>
-                'client_balance',
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        $invoice->paid_amount +=
-            $settlementAmount;
-
-        $invoice->remaining_amount -=
-            $settlementAmount;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | عملة مختلفة
-    |--------------------------------------------------------------------------
-    */
-
-    else {
-
-        $rate =
-            ExchangeRate::where(
-                'branch_id',
-                $employee->branch_id
-            )
-                ->where(
-                    'from_currency_id',
-                    $sourceCurrencyId
-                )
-                ->where(
-                    'to_currency_id',
-                    $targetCurrencyId
-                )
-                ->latest('rate_date')
-                ->first();
-
-        $direction = 'direct';
-
-        if(!$rate)
-        {
-            $rate =
-                ExchangeRate::where(
-                    'branch_id',
-                    $employee->branch_id
-                )
-                    ->where(
-                        'from_currency_id',
-                        $targetCurrencyId
-                    )
-                    ->where(
-                        'to_currency_id',
+                $balance =
+                    ClientBalanceService::getBalance(
+                        $request->client_id,
                         $sourceCurrencyId
+                    );
+
+                if (
+                    $balance <
+                    $request->amount
+                ) {
+                    throw new \Exception(
+                        'الرصيد غير كافٍ'
+                    );
+                }
+
+                $settlementAmount =
+                    min(
+                        $request->amount,
+                        $invoice->remaining_amount
+                    );
+
+                ClientBalanceLog::create([
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'currency_id' =>
+                        $sourceCurrencyId,
+
+                    'amount' =>
+                        -$settlementAmount,
+
+                    'type' =>
+                        'settlement',
+
+                    'reference_type' =>
+                        'invoice',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'notes' =>
+                        $request->notes,
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                Payment::create([
+
+                    'branch_id' =>
+                        $employee->branch_id,
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'invoice_id' =>
+                        $invoice->id,
+
+                    'amount' =>
+                        $settlementAmount,
+
+                    'currency_id' =>
+                        $invoice->currency_id,
+
+                    'payment_method' =>
+                        'client_balance',
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                $invoice->paid_amount +=
+                    $settlementAmount;
+
+                $invoice->remaining_amount -=
+                    $settlementAmount;
+            } /*
+            |--------------------------------------------------------------------------
+            | عملة مختلفة
+            |--------------------------------------------------------------------------
+            */
+
+            else {
+
+                $rate =
+                    ExchangeRate::where(
+                        'branch_id',
+                        $employee->branch_id
                     )
-                    ->latest('rate_date')
-                    ->first();
+                        ->where(
+                            'from_currency_id',
+                            $sourceCurrencyId
+                        )
+                        ->where(
+                            'to_currency_id',
+                            $targetCurrencyId
+                        )
+                        ->latest('rate_date')
+                        ->first();
+
+                $direction = 'direct';
+
+                if (!$rate) {
+                    $rate =
+                        ExchangeRate::where(
+                            'branch_id',
+                            $employee->branch_id
+                        )
+                            ->where(
+                                'from_currency_id',
+                                $targetCurrencyId
+                            )
+                            ->where(
+                                'to_currency_id',
+                                $sourceCurrencyId
+                            )
+                            ->latest('rate_date')
+                            ->first();
 
 
-$direction = 'reverse';
+                    $direction = 'reverse';
 
 
-}
+                }
 
-        if(!$rate)
-        {
-            throw new \Exception(
-                'لا يوجد سعر صرف'
-            );
-        }
+                if (!$rate) {
+                    throw new \Exception(
+                        'لا يوجد سعر صرف'
+                    );
+                }
 
-        /*
-        135 YER = 1 SAR
-        */
+                /*
+                135 YER = 1 SAR
+                */
 
-        if(
-            $direction === 'direct'
-        ){
-            $targetAmount =
-                $request->amount
-                /
-                $rate->rate;
-        }
-        else
-        {
-            $targetAmount =
-                $request->amount
-                *
-                $rate->rate;
-        }
+                if (
+                    $direction === 'direct'
+                ) {
+                    $targetAmount =
+                        $request->amount
+                        /
+                        $rate->rate;
+                } else {
+                    $targetAmount =
+                        $request->amount
+                        *
+                        $rate->rate;
+                }
 
 
-        if(
-            $targetAmount >
-            $invoice->remaining_amount
-        ){
+                if (
+                    $targetAmount >
+                    $invoice->remaining_amount
+                ) {
 
-            $targetAmount =
-                $invoice->remaining_amount;
+                    $targetAmount =
+                        $invoice->remaining_amount;
 
-            if(
-                $direction === 'direct'
-            ){
-                $requestAmount =
-                    $targetAmount
-                    *
-                    $rate->rate;
+                    if (
+                        $direction === 'direct'
+                    ) {
+                        $requestAmount =
+                            $targetAmount
+                            *
+                            $rate->rate;
+                    } else {
+                        $requestAmount =
+                            $targetAmount
+                            /
+                            $rate->rate;
+                    }
+
+
+                } else {
+
+                    $requestAmount =
+                        $request->amount;
+                }
+
+                $balance =
+                    ClientBalanceService::getBalance(
+                        $request->client_id,
+                        $sourceCurrencyId
+                    );
+
+                if (
+                    $balance <
+                    $requestAmount
+                ) {
+                    throw new \Exception(
+                        'الرصيد غير كافٍ'
+                    );
+                }
+
+                /*
+                خروج من العملة الأصلية
+                */
+
+                ClientBalanceLog::create([
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'currency_id' =>
+                        $sourceCurrencyId,
+
+                    'amount' =>
+                        -$requestAmount,
+
+                    'type' =>
+                        'exchange_out',
+
+                    'reference_type' =>
+                        'invoice',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'notes' =>
+                        $request->notes,
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                /*
+                دخول للعملة الجديدة
+                */
+
+//                ClientBalanceLog::create([
+//
+//                    'client_id' =>
+//                        $request->client_id,
+//
+//                    'currency_id' =>
+//                        $targetCurrencyId,
+//
+//                    'amount' =>
+//                        $targetAmount,
+//
+//                    'type' =>
+//                        'exchange_in',
+//
+//                    'reference_type' =>
+//                        'invoice',
+//
+//                    'reference_id' =>
+//                        $invoice->id,
+//
+//                    'notes' =>
+//                        $request->notes,
+//
+//                    'created_by' =>
+//                        $employee->id
+//
+//                ]);
+
+                /*
+|--------------------------------------------------------------------------
+| مصارفة الخزائن
+|--------------------------------------------------------------------------
+*/
+
+                $fromCashbox =
+                    BranchCashbox::where(
+                        'branch_id',
+                        $employee->branch_id
+                    )
+                        ->where(
+                            'currency_id',
+                            $sourceCurrencyId
+                        )
+                        ->lockForUpdate()
+                        ->first();
+
+                $toCashbox =
+                    BranchCashbox::where(
+                        'branch_id',
+                        $employee->branch_id
+                    )
+                        ->where(
+                            'currency_id',
+                            $targetCurrencyId
+                        )
+                        ->lockForUpdate()
+                        ->first();
+
+                if(!$fromCashbox)
+                {
+                    throw new \Exception(
+                        'خزنة العملة المصدر غير موجودة'
+                    );
+                }
+
+                if(!$toCashbox)
+                {
+                    throw new \Exception(
+                        'خزنة العملة الهدف غير موجودة'
+                    );
+                }
+
+                if($toCashbox->balance < $targetAmount)
+                {
+                    throw new \Exception(
+                        'رصيد الخزنة الهدف غير كافٍ لتنفيذ المصارفة'
+                    );
+                }
+
+
+                /*
+                العميل دفع من رصيده بالعملة المصدر
+                فتزيد الخزنة المصدر
+                */
+
+                $fromCashbox->balance +=
+                    $requestAmount;
+
+                $fromCashbox->save();
+
+                /*
+                تم استخدام العملة الهدف لسداد الفاتورة
+                فتنقص الخزنة الهدف
+                */
+
+
+                $toCashbox->balance -=
+                    $targetAmount;
+
+                $toCashbox->save();
+//
+                CashboxTransaction::create([
+
+                    'branch_id' =>
+                        $employee->branch_id,
+
+                    'currency_id' =>
+                        $sourceCurrencyId,
+
+                    'amount' =>
+                        $requestAmount,
+
+                    'type' =>
+                        'exchange_in',
+
+                    'reference_type' =>
+                        'invoice_settlement',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'notes' =>
+                        'تسوية متعددة العملات',
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                CashboxTransaction::create([
+
+                    'branch_id' =>
+                        $employee->branch_id,
+
+                    'currency_id' =>
+                        $targetCurrencyId,
+
+                    'amount' =>
+                        -$targetAmount,
+
+                    'type' =>
+                        'exchange_out',
+
+                    'reference_type' =>
+                        'invoice_settlement',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'notes' =>
+                        'تسوية متعددة العملات',
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+
+                /*
+                تسوية الفاتورة
+                */
+
+                ClientBalanceLog::create([
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'currency_id' =>
+                        $targetCurrencyId,
+
+                    'amount' =>
+                        -$targetAmount,
+
+                    'type' =>
+                        'settlement',
+
+                    'reference_type' =>
+                        'invoice',
+
+                    'reference_id' =>
+                        $invoice->id,
+
+                    'notes' =>
+                        $request->notes,
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                Payment::create([
+
+                    'branch_id' =>
+                        $employee->branch_id,
+
+                    'client_id' =>
+                        $request->client_id,
+
+                    'invoice_id' =>
+                        $invoice->id,
+
+                    'amount' =>
+                        $targetAmount,
+
+                    'currency_id' =>
+                        $targetCurrencyId,
+
+                    'payment_method' =>
+                        'currency_exchange',
+
+                    'created_by' =>
+                        $employee->id
+
+                ]);
+
+                $invoice->paid_amount +=
+                    $targetAmount;
+
+                $invoice->remaining_amount -=
+                    $targetAmount;
             }
-            else
-            {
-                $requestAmount =
-                    $targetAmount
-                    /
-                    $rate->rate;
+
+            if (
+                $invoice->remaining_amount <= 0
+            ) {
+
+                $invoice->remaining_amount = 0;
+
+                $invoice->status = 'paid';
+
+            } else {
+
+                $invoice->status = 'partial';
             }
 
+            $invoice->save();
 
-        }else{
+            DB::commit();
 
-            $requestAmount =
-                $request->amount;
+            return response()->json([
+
+                'success' => true,
+
+                'message' =>
+                    'تمت التسوية بنجاح'
+
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
+
+            ], 422);
         }
 
-        $balance =
-            ClientBalanceService::getBalance(
-                $request->client_id,
-                $sourceCurrencyId
-            );
 
-        if(
-            $balance <
-            $requestAmount
-        ){
-            throw new \Exception(
-                'الرصيد غير كافٍ'
-            );
-        }
-
-        /*
-        خروج من العملة الأصلية
-        */
-
-        ClientBalanceLog::create([
-
-            'client_id' =>
-                $request->client_id,
-
-            'currency_id' =>
-                $sourceCurrencyId,
-
-            'amount' =>
-                -$requestAmount,
-
-            'type' =>
-                'exchange_out',
-
-            'reference_type' =>
-                'invoice',
-
-            'reference_id' =>
-                $invoice->id,
-
-            'notes' =>
-                $request->notes,
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        /*
-        دخول للعملة الجديدة
-        */
-
-        ClientBalanceLog::create([
-
-            'client_id' =>
-                $request->client_id,
-
-            'currency_id' =>
-                $targetCurrencyId,
-
-            'amount' =>
-                $targetAmount,
-
-            'type' =>
-                'exchange_in',
-
-            'reference_type' =>
-                'invoice',
-
-            'reference_id' =>
-                $invoice->id,
-
-            'notes' =>
-                $request->notes,
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        /*
-        تسوية الفاتورة
-        */
-
-        ClientBalanceLog::create([
-
-            'client_id' =>
-                $request->client_id,
-
-            'currency_id' =>
-                $targetCurrencyId,
-
-            'amount' =>
-                -$targetAmount,
-
-            'type' =>
-                'settlement',
-
-            'reference_type' =>
-                'invoice',
-
-            'reference_id' =>
-                $invoice->id,
-
-            'notes' =>
-                $request->notes,
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        Payment::create([
-
-            'branch_id' =>
-                $employee->branch_id,
-
-            'client_id' =>
-                $request->client_id,
-
-            'invoice_id' =>
-                $invoice->id,
-
-            'amount' =>
-                $targetAmount,
-
-            'currency_id' =>
-                $targetCurrencyId,
-
-            'payment_method' =>
-                'currency_exchange',
-
-            'created_by' =>
-                $employee->id
-
-        ]);
-
-        $invoice->paid_amount +=
-            $targetAmount;
-
-        $invoice->remaining_amount -=
-            $targetAmount;
     }
-
-    if(
-        $invoice->remaining_amount <= 0
-    ){
-
-        $invoice->remaining_amount = 0;
-
-        $invoice->status = 'paid';
-
-    }else{
-
-        $invoice->status = 'partial';
     }
-
-    $invoice->save();
-
-    DB::commit();
-
-    return response()->json([
-
-        'success' => true,
-
-        'message' =>
-            'تمت التسوية بنجاح'
-
-    ]);
-
-} catch (\Exception $e){
-
-    DB::rollBack();
-
-    return response()->json([
-
-        'success' => false,
-
-        'message' =>
-            $e->getMessage()
-
-    ],422);
-}
-
-
-}
-
-}

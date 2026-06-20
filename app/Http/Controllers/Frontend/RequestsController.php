@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\BranchCashbox;
+use App\Models\CashboxTransaction;
 use App\Models\ClientBalanceLog;
 use App\Models\Payment;
 use App\Models\Request as RequestModel;
@@ -420,6 +421,35 @@ class RequestsController extends Controller
                                 'balance',
                                 $paidAmount
                             );
+                            CashboxTransaction::create([
+
+                                'branch_id' =>
+                                    $invoice->branch_id,
+
+                                'currency_id' =>
+                                    $invoice->currency_id,
+
+                                'amount' =>
+                                    -$paidAmount,
+
+                                'type' =>
+                                    'refund',
+
+                                'reference_type' =>
+                                    'request',
+
+                                'reference_id' =>
+                                    $order->id,
+
+                                'notes' =>
+                                    'استرجاع طلب ملغي',
+
+                                'created_by' =>
+                                    auth()->user()
+                                        ->employee
+                                        ->id
+
+                            ]);
                         }
                     }
 

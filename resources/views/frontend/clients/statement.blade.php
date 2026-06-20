@@ -251,7 +251,20 @@
                         <option value="settlement" @selected(request('type') == 'settlement')>⚙️ تسوية حساب</option>
                         <option value="exchange_in" @selected(request('type') == 'exchange_in')>💱 تحويل صرف داخلي (In)</option>
                         <option value="exchange_out" @selected(request('type') == 'exchange_out')>💱 تحويل صرف خارجي (Out)</option>
-                        <option value="refund" @selected(request('type') == 'refund')>🔁 استرجاع مالي</option>
+                        <option value="refund" @selected(request('type') == 'refund')> 🔁 استرجاع لحساب العميل</option>
+                        <option value="invoice_payment"
+                            @selected(request('type') == 'invoice_payment')>
+
+                             💵 دفعة فاتورة نقدية
+
+                        </option>
+
+                        <option value="refund_cash"
+                            @selected(request('type') == 'refund_cash')>
+
+                            🔁 مسترجع نقدي
+
+                        </option>
                     </select>
                 </div>
 
@@ -302,8 +315,29 @@
 
                             <td class="p-4 whitespace-nowrap">
                                     <span class="px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm inline-block
-                                        @if(in_array($log->type, ['receipt', 'exchange_in', 'refund'])) bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400
-                                        @elseif(in_array($log->type, ['payment', 'settlement', 'exchange_out'])) bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400
+
+                                      @if(in_array($log->type, [
+
+    'receipt',
+
+    'exchange_in',
+
+    'refund',
+
+    'invoice_payment']))
+     bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400
+                                      @elseif(in_array($log->type, [
+
+    'payment',
+
+    'settlement',
+
+    'exchange_out',
+
+    'refund_cash'
+
+]))
+ bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400
                                         @else bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 @endif">
                                         {{ $log->type_label ?? $log->type }}
                                     </span>
@@ -329,7 +363,11 @@
                             </td>
 
                             <td class="p-4 text-left font-mono font-bold text-base text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                                @if($log->amount < 0)
+                                @if(
+     $log->amount < 0
+     ||
+     $log->type === 'refund_cash'
+ )
                                     {{ number_format(abs($log->amount), 2) }}
                                 @else
                                     <span class="text-gray-300 dark:text-gray-700">-</span>
@@ -337,7 +375,11 @@
                             </td>
 
                             <td class="p-4 text-left font-mono font-bold text-base text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                @if($log->amount > 0)
+                                @if(
+     $log->amount > 0
+     ||
+     $log->type === 'invoice_payment'
+ )
                                     {{ number_format($log->amount, 2) }}
                                 @else
                                     <span class="text-gray-300 dark:text-gray-700">-</span>

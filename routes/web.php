@@ -604,6 +604,18 @@ Route::prefix('dashboard')
             [FinancialReportController::class,'exportPdf']
         )->name('financial-report.pdf');
 
+
+        Route::get(
+            '/reports/profit-analysis',
+            [FinancialReportController::class,'profitAnalysis']
+        )->name('reports.profit-analysis');
+
+        Route::get(
+            '/reports/profit-analysis/pdf',
+            [FinancialReportController::class,'profitAnalysisPdf']
+        )->name(
+            'reports.profit-analysis.pdf'
+        );
     });
 //end safwan
 

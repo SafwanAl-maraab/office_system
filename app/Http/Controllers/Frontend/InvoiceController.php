@@ -236,6 +236,8 @@ class InvoiceController extends Controller
     }
 
 
+
+    //هذة الدالة لم نستخدمها
     public function cancelOperation(Request $request, Invoice $invoice)
     {
         $request->validate([
