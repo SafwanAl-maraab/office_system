@@ -17,6 +17,7 @@
     <title>{{ $info->office_name ?? 'Office System' }}</title>
 
     @vite(['resources/css/app.css','resources/js/app.js'])
+    
 
     <style>
         body { font-family: system-ui, sans-serif; }

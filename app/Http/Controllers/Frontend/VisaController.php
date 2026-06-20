@@ -126,13 +126,13 @@ if (empty($request->agent_id) && (float)$request->agent_cost > 0) {
             }
         }
 
-        if(  $sumCost !== $request->cost_price || $sumCost <= 0 ){
+       if (round($sumCost,2) != round((float)$request->cost_price,2) || $sumCost <= 0) {
 
-            throw new \Exception(
-                'التكلفة غير متساوية '
-            );
+    throw new \Exception(
+        'التكلفة غير متساوية'
+    );
 
-        }
+}
 
         if(  $sumCost >= $request->sale_price  ){
 

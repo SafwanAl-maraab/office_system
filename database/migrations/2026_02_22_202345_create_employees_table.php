@@ -15,8 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained()->cascadeOnDelete();
-
+$table->foreignId('role_id')->nullable()->constrained()->nullOnDelete();
             $table->string('full_name');
             $table->string('phone')->nullable();
 

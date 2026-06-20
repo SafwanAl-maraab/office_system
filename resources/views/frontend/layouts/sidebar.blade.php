@@ -636,6 +636,39 @@ $agentsActive = request()->routeIs('agents.*');
         </a>
 
 
+         @php
+            $active = request()->routeIs('profile.*');
+        @endphp
+
+        <a href="{{ route('profile.edit') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ $active
+        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
+
+            
+            <span>الملف الشخصي</span>
+        </a>
+
+
+
+         @php
+            $active = request()->routeIs('users.*');
+        @endphp
+
+        <a href="{{ route('users.index') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ $active
+        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
+
+            
+            <span>اداره المدراء </span>
+        </a>
+
+
         <!-- SPACER -->
         <div class="pt-10"></div>
 

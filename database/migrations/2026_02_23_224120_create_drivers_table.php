@@ -20,6 +20,7 @@ return new class extends Migration
 
             // اسم السائق
             $table->string('name');
+            
 
             // 'regular' = سائق عادي (للرحلات الخارجية)
             // 'agent_driver' = سائق ووكيل (للرحلات الداخلية)

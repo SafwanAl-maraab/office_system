@@ -48,7 +48,7 @@ class SettingsController extends Controller
             'facebook'          => 'nullable|string|max:255',
             'whatsapp'          => 'nullable|string|max:50',
             'website'           => 'nullable|string|max:255',
-            'logo'              => 'nullable|image|max:2048', // 2MB
+            'logo'              => 'nullable|image|max:5120', // 2MB
         ]);
 
         $info = Info::where('branch_id', $branch->id)->first();

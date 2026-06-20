@@ -18,10 +18,10 @@ use App\Http\Controllers\Frontend\TripGroupController;
 use App\Http\Controllers\Frontend\BookingController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.login');
 });
 
-Route::middleware(['auth','role:admin'])->prefix('dashboard')->group(function () {
+Route::middleware('auth')->prefix('dashboard')->group(function () {
 
     Route::get('/settings', [SettingsController::class, 'index'])
         ->name('settings.index');
@@ -626,6 +626,18 @@ require __DIR__.'/auth.php';
 
 //محمد المعرب تاشيرات
 
+
+use App\Http\Controllers\Frontend\UserController;
+
+Route::middleware(['auth'])
+ ->group(function () {
+
+
+Route::resource(
+    'users',
+    UserController::class
+);
+ });
 
 
 
