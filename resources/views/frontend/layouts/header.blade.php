@@ -38,7 +38,7 @@
     </span>
 
                         <span class="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
-        📍 {{ $branchName ?? 'المركز الرئيسي' }}
+        📍 {{ $branchName ?? 'المركز ...' }}
     </span>
                     </div>
             </div>

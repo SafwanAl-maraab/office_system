@@ -11,6 +11,8 @@ use App\Models\AgentTransaction;
 use App\Models\BranchCashbox;
 use App\Models\Currency;
 use Barryvdh\DomPDF\Facade\Pdf;
+use ArPHP\I18N\Arabic; // 💡 استدعاء المكتبة العربية
+
 
 class AgentController extends Controller
 {

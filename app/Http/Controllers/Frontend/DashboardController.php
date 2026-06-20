@@ -3,353 +3,1398 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Agent;
+use App\Models\AgentTransaction;
+use App\Models\Booking;
+use App\Models\BranchCashbox;
+use App\Models\CashboxExchange;
+use App\Models\Client;
+use App\Models\ClientVoucher;
+use App\Models\Currency;
+use App\Models\Expense;
+use App\Models\Income;
+use App\Models\Info;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\Visa;
+use App\Models\Request as RequestModel;
+
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-
-public function index(Request $request)
-{
-
-$branchId = auth()->user()->employee->branch_id;
-
-$from = $request->from ?? now()->startOfMonth()->format('Y-m-d');
-$to   = $request->to ?? now()->format('Y-m-d');
+    public function index()
+    {
+        $branchId = auth()->user()
+            ->employee
+            ->branch_id;
 
 
 /*
-|--------------------------------------------------------------------------
-| Today Stats
-|--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+معلومات المكتب
+--------------------------------------------------------------------------
 */
 
-$todayVisas = DB::table('visas')
-->where('branch_id',$branchId)
-->whereDate('created_at',today())
-->count();
-
-$todayBookings = DB::table('bookings')
-->where('branch_id',$branchId)
-->whereDate('created_at',today())
-->count();
-
-$todayRequests = DB::table('requests')
-->where('branch_id',$branchId)
-->whereDate('created_at',today())
-->count();
-
-
+$officeInfo = Info::where(
+    'branch_id',
+    $branchId
+)->first();
 
 /*
-|--------------------------------------------------------------------------
-| Revenue By Currency
-|--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+KPIs
+--------------------------------------------------------------------------
 */
 
-$revenueByCurrency = DB::table('payments')
-->join('currencies','payments.currency_id','=','currencies.id')
-->select(
-'currencies.id',
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(payments.amount) as total')
+$kpis = [
+
+    'clients' => Client::where(
+        'branch_id',
+        $branchId
+    )->count(),
+
+    'agents' => Agent::where(
+        'branch_id',
+        $branchId
+    )->count(),
+
+    'open_invoices' => Invoice::query()
+
+        ->where(
+            'branch_id',
+            $branchId
+        )
+
+        ->where(
+            'is_refund',
+            false
+        )
+
+        ->whereNotIn(
+            'status',
+            [
+                'cancelled',
+                'rejected'
+            ]
+        )
+
+        ->where(
+            'remaining_amount',
+            '>',
+            0
+        )
+
+        ->count(),
+
+    'today_operations' =>
+
+        Visa::where(
+            'branch_id',
+            $branchId
+        )
+        ->whereDate(
+            'created_at',
+            today()
+        )
+        ->count()
+
+        +
+
+        Booking::where(
+            'branch_id',
+            $branchId
+        )
+        ->whereDate(
+            'created_at',
+            today()
+        )
+        ->count()
+
+        +
+
+        RequestModel::where(
+            'branch_id',
+            $branchId
+        )
+        ->whereDate(
+            'created_at',
+            today()
+        )
+        ->count()
+];
+
+/*
+--------------------------------------------------------------------------
+الخزائن
+--------------------------------------------------------------------------
+*/
+
+$cashboxes = BranchCashbox::with(
+    'currency'
 )
-->where('payments.branch_id',$branchId)
-->whereBetween('payments.created_at',[$from,$to])
-->groupBy('currencies.id','currencies.code','currencies.symbol')
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->orderByDesc(
+    'balance'
+)
+
+->get();
+
+/*
+--------------------------------------------------------------------------
+التحصيلات الفعلية
+من الفواتير فقط
+يستثني الملغي والمرفوض والمسترجع
+--------------------------------------------------------------------------
+*/
+
+$collections = Invoice::query()
+
+    ->selectRaw('
+        currency_id,
+        SUM(paid_amount) as total
+    ')
+
+    ->where(
+        'branch_id',
+        $branchId
+    )
+
+    ->where(
+        'is_refund',
+        false
+    )
+
+    ->whereNotIn(
+        'status',
+        [
+            'cancelled',
+            'rejected'
+        ]
+    )
+
+    ->groupBy(
+        'currency_id'
+    )
+
+    ->with(
+        'currency'
+    )->get();
+
+
+    /*
+--------------------------------------------------------------------------
+الإيرادات
+--------------------------------------------------------------------------
+*/
+
+$incomes = Income::query()
+
+
+->selectRaw('
+    currency_id,
+    SUM(amount) as total
+')
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->groupBy(
+    'currency_id'
+)
+
+->with(
+    'currency'
+)
+
 ->get();
 
 
-
-/*
-|--------------------------------------------------------------------------
-| Expenses By Currency
-|--------------------------------------------------------------------------
+    /*
+--------------------------------------------------------------------------
+ المصروفات
+--------------------------------------------------------------------------
 */
 
-$expensesByCurrency = DB::table('expenses')
-->join('currencies','expenses.currency_id','=','currencies.id')
-->select(
-'currencies.id',
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(expenses.amount) as total')
+$expenses = Expense::query()
+
+
+->selectRaw('
+    currency_id,
+    SUM(amount) as total
+')
+
+->where(
+    'branch_id',
+    $branchId
 )
-->where('expenses.branch_id',$branchId)
-->whereBetween('expenses.created_at',[$from,$to])
-->groupBy('currencies.id','currencies.code','currencies.symbol')
+
+->groupBy(
+    'currency_id'
+)
+
+->with(
+    'currency'
+)
+
 ->get();
 
 
-
-/*
-|--------------------------------------------------------------------------
-| Cashbox Balance
-|--------------------------------------------------------------------------
+    /*
+--------------------------------------------------------------------------
+المتبقي عند العملاء
+--------------------------------------------------------------------------
 */
 
-$cashbox = DB::table('branch_cashboxes')
-->join('currencies','branch_cashboxes.currency_id','=','currencies.id')
-->select(
-'currencies.code',
-'currencies.symbol',
-'branch_cashboxes.balance'
+$clientReceivables = Invoice::query()
+
+
+->selectRaw('
+    currency_id,
+    SUM(remaining_amount) as total
+')
+
+->where(
+    'branch_id',
+    $branchId
 )
-->where('branch_cashboxes.branch_id',$branchId)
+
+->where(
+    'is_refund',
+    false
+)
+
+->whereNotIn(
+    'status',
+    [
+        'cancelled',
+        'rejected'
+    ]
+)
+
+->where(
+    'remaining_amount',
+    '>',
+    0
+)
+
+->groupBy(
+    'currency_id'
+)
+
+->with(
+    'currency'
+)
+
 ->get();
 
 
-
-/*
-|--------------------------------------------------------------------------
-| Remaining Clients (By Currency)
-|--------------------------------------------------------------------------
+    /*
+--------------------------------------------------------------------------
+ذمم الوكلاء
+--------------------------------------------------------------------------
 */
 
-$clientsRemaining = DB::table('invoices')
-->join('currencies','invoices.currency_id','=','currencies.id')
-->select(
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(invoices.remaining_amount) as total')
+$agentBalances = AgentTransaction::query()
+
+
+->selectRaw('
+    currency_id,
+    SUM(amount) as total
+')
+
+->where(
+    'branch_id',
+    $branchId
 )
-->where('invoices.branch_id',$branchId)
-->groupBy('currencies.code','currencies.symbol')
+
+->groupBy(
+    'currency_id'
+)
+
+->with(
+    'currency'
+)
+
 ->get();
 
 
-
-/*
-|--------------------------------------------------------------------------
-| Agents Balance (By Currency)
-|--------------------------------------------------------------------------
+    /*
+--------------------------------------------------------------------------
+إحصائيات اليوم
+--------------------------------------------------------------------------
 */
 
-$agentsRemaining = DB::table('agent_transactions')
-->join('currencies','agent_transactions.currency_id','=','currencies.id')
-->select(
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(agent_transactions.amount) as total')
-)
-->where('agent_transactions.branch_id',$branchId)
-->groupBy('currencies.code','currencies.symbol')
-->get();
+$todayStats = [
 
 
+'visas' =>
 
-/*
-|--------------------------------------------------------------------------
-| Visa Profit By Currency
-|--------------------------------------------------------------------------
-*/
+    Visa::where(
+        'branch_id',
+        $branchId
+    )
 
-$visaProfit = DB::table('visas')
-->join('currencies','visas.currency_id','=','currencies.id')
-->select(
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(visas.sale_price - visas.cost_price - visas.agent_cost) as profit')
-)
-->where('visas.branch_id',$branchId)
-->whereBetween('visas.created_at',[$from,$to])
-->groupBy('currencies.code','currencies.symbol')
-->get();
+    ->whereDate(
+        'created_at',
+        today()
+    )
 
+    ->count(),
 
+'bookings' =>
 
-/*
-|--------------------------------------------------------------------------
-| Booking Profit By Currency
-|--------------------------------------------------------------------------
-*/
+    Booking::where(
+        'branch_id',
+        $branchId
+    )
 
-$bookingProfit = DB::table('bookings')
-->join('currencies','bookings.currency_id','=','currencies.id')
-->select(
-'currencies.code',
-'currencies.symbol',
-DB::raw('SUM(bookings.final_price - bookings.purchase_price) as profit')
-)
-->where('bookings.branch_id',$branchId)
-->whereBetween('bookings.created_at',[$from,$to])
-->groupBy('currencies.code','currencies.symbol')
-->get();
+    ->whereDate(
+        'created_at',
+        today()
+    )
 
+    ->count(),
 
+'requests' =>
+
+    RequestModel::where(
+        'branch_id',
+        $branchId
+    )
+
+    ->whereDate(
+        'created_at',
+        today()
+    )
+
+    ->count(),
 
 /*
-|--------------------------------------------------------------------------
-| Monthly Revenue Chart
-|--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+عدد الدفعات اليوم
+--------------------------------------------------------------------------
 */
 
-$monthlyRevenue = DB::table('payments')
-->select(
-DB::raw('DATE(created_at) as date'),
-DB::raw('SUM(amount) as total')
-)
-->where('branch_id',$branchId)
-->whereBetween('created_at',[$from,$to])
-->groupBy(DB::raw('DATE(created_at)'))
-->pluck('total','date');
+'payments' =>
 
+    Payment::where(
+        'branch_id',
+        $branchId
+    )
 
+    ->whereDate(
+        'created_at',
+        today()
+    )
 
-/*
-|--------------------------------------------------------------------------
-| Visa Status
-|--------------------------------------------------------------------------
-*/
+    ->count(),
 
-$visaStatus = DB::table('visas')
-->select('status',DB::raw('COUNT(*) as total'))
-->where('branch_id',$branchId)
-->groupBy('status')
-->pluck('total','status');
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Top Agents
-|--------------------------------------------------------------------------
-*/
-
-$topAgents = DB::table('agent_transactions')
-->join('agents','agent_transactions.agent_id','=','agents.id')
-->select(
-'agents.id',
-'agents.name',
-DB::raw('SUM(agent_transactions.amount) as total')
-)
-->where('agent_transactions.branch_id',$branchId)
-->groupBy('agents.id','agents.name')
-->orderByDesc('total')
-->limit(5)
-->get();
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Top Trips
-|--------------------------------------------------------------------------
-*/
-
-$topTrips = DB::table('bookings')
-->join('trips','bookings.trip_id','=','trips.id')
-->select(
-'trips.id',
-'trips.from_city',
-'trips.to_city',
-DB::raw('COUNT(bookings.id) as total')
-)
-->where('bookings.branch_id',$branchId)
-->groupBy('trips.id','trips.from_city','trips.to_city')
-->orderByDesc('total')
-->limit(5)
-->get();
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Latest Visas
-|--------------------------------------------------------------------------
-*/
-
-$latestVisas = DB::table('visas')
-->join('clients','visas.client_id','=','clients.id')
-->select(
-'clients.full_name',
-'visas.sale_price',
-'visas.status'
-)
-->where('visas.branch_id',$branchId)
-->latest('visas.created_at')
-->limit(5)
-->get();
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Latest Bookings
-|--------------------------------------------------------------------------
-*/
-
-$latestBookings = DB::table('bookings')
-->join('clients','bookings.client_id','=','clients.id')
-->select(
-'clients.full_name',
-'bookings.final_price',
-'bookings.status'
-)
-->where('bookings.branch_id',$branchId)
-->latest('bookings.created_at')
-->limit(5)
-->get();
-
-
-
-/*
-|--------------------------------------------------------------------------
-| System Stats
-|--------------------------------------------------------------------------
-*/
-
-$stats = [
-
-'visas'=>DB::table('visas')->where('branch_id',$branchId)->count(),
-
-'bookings'=>DB::table('bookings')->where('branch_id',$branchId)->count(),
-
-'clients'=>DB::table('clients')->where('branch_id',$branchId)->count(),
-
-'agents'=>DB::table('agents')->where('branch_id',$branchId)->count(),
-
-'trips'=>DB::table('trips')->where('branch_id',$branchId)->count(),
-
-'drivers'=>DB::table('drivers')->where('branch_id',$branchId)->count(),
 
 ];
 
+       /*
+--------------------------------------------------------------------------
+آخر العمليات
+--------------------------------------------------------------------------
+*/
+
+$recentPayments = Payment::query()
 
 
-return view('frontend.dashboard.index',compact(
+->where(
+    'branch_id',
+    $branchId
+)
 
-'from','to',
+->latest()
 
-'todayVisas',
-'todayBookings',
-'todayRequests',
+->take(5)
 
-'revenueByCurrency',
-'expensesByCurrency',
+->get();
 
-'cashbox',
 
-'clientsRemaining',
-'agentsRemaining',
+$recentExpenses = Expense::query()
 
-'visaProfit',
-'bookingProfit',
 
-'monthlyRevenue',
-'visaStatus',
+->where(
+    'branch_id',
+    $branchId
+)
 
-'topAgents',
-'topTrips',
+->latest()
 
-'latestVisas',
-'latestBookings',
+->take(5)
 
-'stats'
+->get();
 
-));
+
+$recentIncomes = Income::query()
+
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(5)
+
+->get();
+
+
+    /*
+--------------------------------------------------------------------------
+Alerts
+--------------------------------------------------------------------------
+*/
+
+$alerts = [];
+
+/*
+--------------------------------------------------------------------------
+فواتير غير مسددة
+--------------------------------------------------------------------------
+*/
+
+$unpaidInvoices = Invoice::query()
+
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->where(
+    'is_refund',
+    false
+)
+
+->whereNotIn(
+    'status',
+    [
+        'cancelled',
+        'rejected'
+    ]
+)
+
+->where(
+    'remaining_amount',
+    '>',
+    0
+)
+
+->count();
+
+
+if($unpaidInvoices > 0)
+{
+    $alerts[] = [
+
+
+    'icon' => '⚠️',
+
+    'color' => 'yellow',
+
+    'title' => 'فواتير غير مسددة',
+
+    'description' =>
+        $unpaidInvoices .
+        ' فاتورة تحتاج متابعة'
+];
+
 
 }
 
+/*
+--------------------------------------------------------------------------
+خزائن منخفضة
+--------------------------------------------------------------------------
+*/
+
+foreach($cashboxes as $cashbox)
+{
+    if($cashbox->balance <= 100)
+    {
+        $alerts[] = [
+
+
+        'icon' => '🚨',
+
+        'color' => 'red',
+
+        'title' =>
+            'رصيد خزنة منخفض',
+
+        'description' =>
+            $cashbox->currency->code .
+            ' أقل من الحد الأدنى'
+    ];
+}
+
+
+}
+
+    /*
+--------------------------------------------------------------------------
+عملاء لديهم ذمم كبيرة
+--------------------------------------------------------------------------
+*/
+
+    $highDebts = Invoice::query()
+
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->where(
+    'is_refund',
+    false
+)
+
+->whereNotIn(
+    'status',
+    [
+        'cancelled',
+        'rejected'
+    ]
+)
+
+->where(
+    'remaining_amount',
+    '>',
+    1000
+)
+
+->count();
+
+
+if($highDebts > 0)
+{
+    $alerts[] = [
+
+
+    'icon' => '👤',
+
+    'color' => 'orange',
+
+    'title' =>
+        'عملاء لديهم مديونية مرتفعة',
+
+    'description' =>
+        $highDebts .
+        ' حالة تحتاج متابعة'
+];
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+Timeline
+--------------------------------------------------------------------------
+*/
+
+$timeline = collect();
+
+/*
+--------------------------------------------------------------------------
+Payments
+--------------------------------------------------------------------------
+*/
+
+foreach(
+
+
+Payment::with([
+    'client',
+    'currency'
+])
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(10)
+
+->get()
+
+as $item
+
+
+)
+{
+    $timeline->push([
+
+
+    'date' =>
+        $item->created_at,
+
+    'icon' =>
+
+        $item->payment_method === 'refund'
+
+            ? '↩️'
+
+            : '💵',
+
+    'title' =>
+
+        $item->payment_method === 'refund'
+
+            ? 'مسترجع نقدي'
+
+            : 'دفعة فاتورة',
+
+    'description' =>
+
+        $item->client?->full_name,
+
+    'amount' =>
+
+        $item->amount,
+
+    'currency' =>
+
+        $item->currency?->code
+
+]);
+
+
+}
+
+      /*
+--------------------------------------------------------------------------
+Expenses
+--------------------------------------------------------------------------
+*/
+
+foreach(
+
+
+Expense::with([
+    'currency'
+])
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(10)
+
+->get()
+
+as $item
+
+
+)
+{
+    $timeline->push([
+
+
+    'date' =>
+        $item->created_at,
+
+    'icon' =>
+        '📉',
+
+    'title' =>
+        'مصروف',
+
+    'description' =>
+        $item->description,
+
+    'amount' =>
+        $item->amount,
+
+    'currency' =>
+        $item->currency?->code
+
+]);
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+Incomes
+--------------------------------------------------------------------------
+*/
+
+foreach(
+
+
+Income::with([
+    'currency'
+])
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(10)
+
+->get()
+
+as $item
+
+
+)
+{
+    $timeline->push([
+
+
+    'date' =>
+        $item->created_at,
+
+    'icon' =>
+        '📈',
+
+    'title' =>
+        'إيراد',
+
+    'description' =>
+        $item->description,
+
+    'amount' =>
+        $item->amount,
+
+    'currency' =>
+        $item->currency?->code
+
+]);
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+Client Vouchers
+--------------------------------------------------------------------------
+*/
+
+foreach(
+
+
+ClientVoucher::with([
+    'client',
+    'currency'
+])
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(10)
+
+->get()
+
+as $item
+
+
+)
+{
+    $timeline->push([
+
+
+    'date' =>
+        $item->created_at,
+
+    'icon' =>
+
+        $item->type === 'receipt'
+
+            ? '🟢'
+
+            : '🔴',
+
+    'title' =>
+
+        $item->type === 'receipt'
+
+            ? 'سند قبض'
+
+            : 'سند صرف',
+
+    'description' =>
+        $item->client?->full_name,
+
+    'amount' =>
+        $item->amount,
+
+    'currency' =>
+        $item->currency?->code
+
+]);
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+Currency Exchanges
+--------------------------------------------------------------------------
+*/
+
+foreach(
+
+
+CashboxExchange::where(
+    'branch_id',
+    $branchId
+)
+
+->latest()
+
+->take(10)
+
+->get()
+
+as $item
+
+
+)
+{
+    $timeline->push([
+
+
+    'date' =>
+        $item->created_at,
+
+    'icon' =>
+        '🔄',
+
+    'title' =>
+        'مصارفة',
+
+    'description' =>
+
+        'تحويل '
+
+        .
+
+        number_format(
+            $item->from_amount,
+            2
+        ),
+
+    'amount' =>
+        $item->to_amount,
+
+    'currency' =>
+        null
+
+]);
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+ترتيب العمليات
+--------------------------------------------------------------------------
+*/
+
+$timeline =
+
+
+$timeline
+
+    ->sortByDesc(
+        'date'
+    )
+
+    ->take(20)
+
+    ->values();
+
+
+/*
+--------------------------------------------------------------------------
+Charts
+--------------------------------------------------------------------------
+*/
+
+/*
+--------------------------------------------------------------------------
+حالة التأشيرات
+--------------------------------------------------------------------------
+*/
+
+$visaChart = [
+
+
+'pending' =>
+
+    Visa::where(
+        'branch_id',
+        $branchId
+    )
+    ->where(
+        'status',
+        'pending'
+    )
+    ->count(),
+
+'issued' =>
+
+    Visa::where(
+        'branch_id',
+        $branchId
+    )
+    ->where(
+        'status',
+        'issued'
+    )
+    ->count(),
+
+'cancelled' =>
+
+    Visa::where(
+        'branch_id',
+        $branchId
+    )
+    ->where(
+        'status',
+        'cancelled'
+    )
+    ->count(),
+
+
+];
+
+/*
+--------------------------------------------------------------------------
+توزيع العمليات
+--------------------------------------------------------------------------
+*/
+
+$operationsChart = [
+
+
+'visas' =>
+
+    Visa::where(
+        'branch_id',
+        $branchId
+    )->count(),
+
+'bookings' =>
+
+    Booking::where(
+        'branch_id',
+        $branchId
+    )->count(),
+
+'requests' =>
+
+    RequestModel::where(
+        'branch_id',
+        $branchId
+    )->count(),
+
+
+];
+
+ /*
+--------------------------------------------------------------------------
+آخر 12 شهر تحصيلات
+المصدر الحقيقي = الفواتير
+--------------------------------------------------------------------------
+*/
+
+$monthlyCollections = [];
+
+for($i = 11; $i >= 0; $i--)
+{
+    $month =
+        now()
+            ->copy()
+            ->subMonths($i);
+
+
+$monthlyCollections[] = [
+
+    'month' =>
+        $month->format('M'),
+
+    'total' =>
+
+        Invoice::where(
+            'branch_id',
+            $branchId
+        )
+
+        ->where(
+            'is_refund',
+            false
+        )
+
+        ->whereNotIn(
+            'status',
+            [
+                'cancelled',
+                'rejected'
+            ]
+        )
+
+        ->whereYear(
+            'created_at',
+            $month->year
+        )
+
+        ->whereMonth(
+            'created_at',
+            $month->month
+        )
+
+        ->sum(
+            'paid_amount'
+        )
+];
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+الأرباح المؤكدة حسب العملة
+--------------------------------------------------------------------------
+*/
+
+$profitCards = [];
+
+$currencies = Currency::all();
+
+foreach($currencies as $currency)
+{
+    $confirmedProfit = 0;
+
+
+$invoices =
+
+    Invoice::where(
+        'branch_id',
+        $branchId
+    )
+
+    ->where(
+        'currency_id',
+        $currency->id
+    )
+
+    ->where(
+        'is_refund',
+        false
+    )
+
+    ->whereNotIn(
+        'status',
+        [
+            'cancelled',
+            'rejected'
+        ]
+    )
+
+    ->get();
+
+foreach($invoices as $invoice)
+{
+    if(
+        $invoice->total_amount <= 0
+    )
+    {
+        continue;
+    }
+
+    $ratio =
+
+        $invoice->paid_amount
+
+        /
+
+        $invoice->total_amount;
+
+    $recoveredCost =
+
+        $invoice->cost
+
+        *
+
+        $ratio;
+
+    $confirmedProfit +=
+
+        $invoice->paid_amount
+
+        -
+
+        $recoveredCost;
+}
+
+if($confirmedProfit != 0)
+{
+    $profitCards[] = [
+
+        'currency' =>
+            $currency,
+
+        'profit' =>
+            round(
+                $confirmedProfit,
+                2
+            )
+    ];
+}
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+الأرباح الشهرية
+--------------------------------------------------------------------------
+*/
+
+$monthlyProfit = [];
+
+for($i = 11; $i >= 0; $i--)
+{
+    $month =
+        now()
+            ->copy()
+            ->subMonths($i);
+
+
+$profit = 0;
+
+$invoices =
+
+    Invoice::where(
+        'branch_id',
+        $branchId
+    )
+
+    ->whereYear(
+        'created_at',
+        $month->year
+    )
+
+    ->whereMonth(
+        'created_at',
+        $month->month
+    )
+
+    ->where(
+        'is_refund',
+        false
+    )
+
+    ->whereNotIn(
+        'status',
+        [
+            'cancelled',
+            'rejected'
+        ]
+    )
+
+    ->get();
+
+foreach($invoices as $invoice)
+{
+    if(
+        $invoice->total_amount <= 0
+    )
+    {
+        continue;
+    }
+
+    $ratio =
+
+        $invoice->paid_amount
+
+        /
+
+        $invoice->total_amount;
+
+    $profit +=
+
+        $invoice->paid_amount
+
+        -
+
+        (
+            $invoice->cost
+            *
+            $ratio
+        );
+}
+
+$monthlyProfit[] = [
+
+    'month' =>
+        $month->format('M'),
+
+    'total' =>
+        round(
+            $profit,
+            2
+        )
+];
+
+
+}
+
+/*
+--------------------------------------------------------------------------
+المسترجعات
+--------------------------------------------------------------------------
+*/
+
+$refunds =
+
+
+Invoice::selectRaw('
+    currency_id,
+    SUM(total_amount) as total
+')
+
+->where(
+    'branch_id',
+    $branchId
+)
+
+->where(
+    'is_refund',
+    true
+)
+
+->groupBy(
+    'currency_id'
+)
+
+->with(
+    'currency'
+)
+
+->get();
+
+
+/*
+--------------------------------------------------------------------------
+صافي التحصيلات
+--------------------------------------------------------------------------
+*/
+
+$netCollections = [];
+
+foreach($collections as $collection)
+{
+    $refund =
+
+
+    $refunds
+
+        ->where(
+            'currency_id',
+            $collection->currency_id
+        )
+
+        ->first();
+
+$netCollections[] = [
+
+    'currency' =>
+
+        $collection->currency,
+
+    'collections' =>
+
+        $collection->total,
+
+    'refunds' =>
+
+        $refund->total ?? 0,
+
+    'net' =>
+
+        $collection->total
+
+        -
+
+        ($refund->total ?? 0)
+];
+
+
+}
+return view(
+    'frontend.dashboard.index',
+    compact(
+
+        'officeInfo',
+
+        'kpis',
+
+        'cashboxes',
+
+        'collections',
+
+        'incomes',
+
+        'expenses',
+
+        'clientReceivables',
+
+        'agentBalances',
+
+        'todayStats',
+
+        'recentPayments',
+
+        'recentExpenses',
+
+        'recentIncomes',
+
+        'alerts',
+
+        'timeline',
+
+        'visaChart',
+
+        'operationsChart',
+
+        'monthlyCollections',
+
+        'profitCards',
+
+        'refunds',
+
+        'netCollections',
+        'monthlyProfit',
+    )
+);
+    }
 }
