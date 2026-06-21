@@ -17,6 +17,16 @@ use App\Http\Controllers\Frontend\VisaController;
 use App\Http\Controllers\Frontend\TripGroupController;
 use App\Http\Controllers\Frontend\BookingController;
 
+
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+
+// تحويل الرابط الرئيسي مباشرة إلى صفحة تسجيل الدخول
+Route::redirect('/', '/login');
+
+// مسار تسجيل الدخول الخاص بك
+Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    ->name('login');
+
 Route::middleware(['auth'])
     ->prefix('dashboard')
     ->group(function () {

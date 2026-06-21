@@ -58,7 +58,7 @@ class TripController extends Controller
             ->get();
 
         $buses = Bus::where('status', 'active')
-            ->whereNull('agent_id')
+            ->whereNotNull('agent_id') // تم عكس الشرط هنا ليجلب الباصات المرتبطة بوكيل فقط
             ->get();
 
         $currencies = Currency::all();

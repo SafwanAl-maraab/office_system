@@ -105,11 +105,10 @@
                 <select id="edit_status" name="status"
                         class="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
 
-                    <option value="scheduled">scheduled</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="completed">completed</option>
-                    <option value="cancelled">cancelled</option>
-
+                    <option value="scheduled">مجدولة</option>
+                    <option value="in_progress">قيد التنفيذ (في الطريق)</option>
+                    <option value="completed">مكتملة</option>
+                    <option value="cancelled">ملغية</option>
                 </select>
 
             </div>

@@ -306,7 +306,7 @@ class VisaController extends Controller
                         $request->paid_amount,
 
                     'type' =>
-                        'invoice_payment',
+                        'income',
 
                     'reference_type' =>
                         'visa',
