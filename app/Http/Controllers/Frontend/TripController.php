@@ -11,6 +11,11 @@ use App\Models\Trip;
 use App\Models\Bus;
 use App\Models\Currency;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Exception;
+
+
 class TripController extends Controller
 {
 
@@ -52,7 +57,9 @@ class TripController extends Controller
             ->where('status', 'active')
             ->get();
 
-        $buses = Bus::where('status','active')->get();
+        $buses = Bus::where('status', 'active')
+            ->whereNull('agent_id')
+            ->get();
 
         $currencies = Currency::all();
 
@@ -76,107 +83,90 @@ class TripController extends Controller
 
     public function store(Request $request)
     {
-
-
         $request->validate([
-
-            'bus_id' => 'required|exists:buses,id',
-
-            'from_city' => 'required|string|max:255',
-
-            'to_city' => 'required|string|max:255',
+            'bus_id'         => 'required|exists:buses,id',
+            'from_city'      => 'required|string|max:255',
+            'to_city'        => 'required|string|max:255',
             'driver_id'      => 'required|exists:drivers,id',
-            'trip_date' => 'required|date',
-
-            'trip_time' => 'required',
-
+            'trip_date'      => 'required|date',
+            'trip_time'      => 'required',
             'purchase_price' => 'required|numeric',
-
-            'sale_price' => 'required|numeric',
-
-            'currency_id' => 'required|exists:currencies,id'
-
+            'sale_price'     => 'required|numeric',
+            'currency_id'    => 'required|exists:currencies,id'
         ]);
-
 
         $bus = Bus::findOrFail($request->bus_id);
 
-
-        if($bus->status != 'active'){
-
-            return back()->with('error','هذا الباص غير متاح حاليا');
-
+        if ($bus->status != 'active') {
+            return back()->with('error', 'هذا الباص غير متاح حاليا');
         }
 
-
-        $exists = Trip::where('bus_id',$request->bus_id)
-
-            ->where('trip_date',$request->trip_date)
-
-            ->where('trip_time',$request->trip_time)
-
+        $exists = Trip::where('bus_id', $request->bus_id)
+            ->where('trip_date', $request->trip_date)
+            ->where('trip_time', $request->trip_time)
             ->exists();
 
-
-        if($exists){
-
-            return back()->with('error','هذا الباص لديه رحلة بنفس التاريخ والوقت');
-
+        if ($exists) {
+            return back()->with('error', 'هذا الباص لديه رحلة بنفس التاريخ والوقت');
         }
-        $branchId = auth()->user()->employee->branch_id;
 
-        Trip::create([
+        // بدء العملية المالية المركبة بأمان
+        DB::beginTransaction();
 
-            'branch_id' => $branchId,
+        try {
+            $branchId = auth()->user()->employee->branch_id;
 
-            'bus_id' => $request->bus_id,
+            // 1. إنشاء الرحلة
+            Trip::create([
+                'branch_id'      => $branchId,
+                'bus_id'         => $request->bus_id,
+                'from_city'      => $request->from_city,
+                'to_city'        => $request->to_city,
+                'trip_date'      => $request->trip_date,
+                'trip_time'      => $request->trip_time,
+                'purchase_price' => $request->purchase_price,
+                'sale_price'     => $request->sale_price,
+                'currency_id'    => $request->currency_id,
+                'notes'          => $request->notes,
+                'status'         => 'scheduled',
+                'created_by'     => auth()->id()
+            ]);
 
-            'from_city' => $request->from_city,
+            // 2. تحديث حالة الباص
+            $bus->update([
+                'status' => 'inactive'
+            ]);
 
-            'to_city' => $request->to_city,
+            // 3. تعيين السائق للباص
+            BusDriver::create([
+                'branch_id' => $branchId,
+                'bus_id'    => $request->bus_id,
+                'driver_id' => $request->driver_id,
+                'start_at'  => $request->trip_time,
+                'end_at'    => null,
+                'active'    => true
+            ]);
 
-            'trip_date' => $request->trip_date,
+            // تأكيد حفظ كافة العمليات في قاعدة البيانات بنجاح
+            DB::commit();
 
-            'trip_time' => $request->trip_time,
+            return redirect()
+                ->route('trips.index')
+                ->with('success', 'تم إنشاء الرحلة بنجاح');
 
-            'purchase_price' => $request->purchase_price,
+        } catch (Exception $e) {
+            // في حال حدوث أي خطأ، يتم التراجع عن كل ما تم تنفيذه بالأعلى وكأن شيئاً لم يكن
+            DB::rollBack();
 
-            'sale_price' => $request->sale_price,
+            // تسجيل تفاصيل الخطأ في ملف الـ log للرجوع إليه لاحقاً
+            Log::error('خطأ أثناء إنشاء الرحلة: ' . $e->getMessage());
 
-            'currency_id' => $request->currency_id,
-
-            'notes' => $request->notes,
-
-            'status' => 'scheduled',
-
-            'created_by' => auth()->id()
-
-        ]);
-
-
-        $bus->update([
-
-            'status' => 'inactive'
-
-        ]);
-
-        BusDriver::create([
-            'branch_id' => $branchId,
-            'bus_id'    => $request->bus_id,
-            'driver_id' => $request->driver_id,
-            'start_at'  => $request->trip_time, // يبدأ عمله مع وقت الرحلة
-            'end_at'    => null,                // مفتوح حتى تنتهي الرحلة
-            'active'    => true
-        ]);
-
-
-        return redirect()
-            ->route('trips.index')
-            ->with('success','تم إنشاء الرحلة بنجاح');
-
+            // العودة للخلف مع إظهار نص الخطأ الفعلي
+            return back()
+                ->withInput()
+                ->with('error', 'حدث خطأ غير متوقع أثناء الحفظ: ' . $e->getMessage());
+        }
     }
-
-
 
 
     /*

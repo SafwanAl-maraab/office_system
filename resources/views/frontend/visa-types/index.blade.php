@@ -75,15 +75,15 @@
                     تعديل
                 </button>
 
-                <form method="POST"
-                      action="{{ route('visa-types.destroy',$type->id) }}"
-                      class="flex-1">
-                    @csrf
-                    @method('DELETE')
-                    <button class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl">
-                        حذف
-                    </button>
-                </form>
+{{--                <form method="POST"--}}
+{{--                      action="{{ route('visa-types.destroy',$type->id) }}"--}}
+{{--                      class="flex-1">--}}
+{{--                    @csrf--}}
+{{--                    @method('DELETE')--}}
+{{--                    <button class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl">--}}
+{{--                        حذف--}}
+{{--                    </button>--}}
+{{--                </form>--}}
 
             </div>
 

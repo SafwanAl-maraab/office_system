@@ -22,7 +22,10 @@ return new class extends Migration
             $table->foreignId('currency_id')->constrained('currencies');
             $table->decimal('balance', 14, 2)->default(0);
 
-            $table->unique([ 'currency_id']);
+            $table->unique([
+                'branch_id',
+                'currency_id'
+            ]);
 
 
 

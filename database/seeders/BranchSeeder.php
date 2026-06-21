@@ -11,24 +11,38 @@ class BranchSeeder extends Seeder
 {
     public function run(): void
     {
-        // إنشاء الفرع
-        $branch = Branch::create([
-            'name' => 'الفرع الرئيسي',
-            'location' => 'اليمن',
-            'phone' => '777000111',
-            'status' => true,
-        ]);
+        $branches = [
 
-        // جلب جميع العملات
+            [
+                'name' => 'الفرع الرئيسي',
+                'location' => 'صنعاء',
+                'phone' => '777000111',
+                'status' => true,
+            ],
+
+            [
+                'name' => 'فرع عمران',
+                'location' => 'عمران',
+                'phone' => '777000222',
+                'status' => true,
+            ],
+
+        ];
+
         $currencies = Currency::all();
 
-        // إنشاء خزنة لكل عملة
-        foreach ($currencies as $currency) {
-            BranchCashbox::create([
-                'branch_id' => $branch->id,
-                'currency_id' => $currency->id,
-                'balance' => 0,
-            ]);
+        foreach ($branches as $data) {
+
+            $branch = Branch::create($data);
+
+            foreach ($currencies as $currency) {
+
+                BranchCashbox::create([
+                    'branch_id'   => $branch->id,
+                    'currency_id' => $currency->id,
+                    'balance'     => 0,
+                ]);
+            }
         }
     }
 }

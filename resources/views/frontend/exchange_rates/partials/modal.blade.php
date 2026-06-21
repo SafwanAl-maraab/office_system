@@ -186,7 +186,7 @@
                     document
                         .getElementById('rateForm')
                         .action =
-                        '/dashboard/exchange-rates/'+rate.id;
+                        '/exchange-rates/'+rate.id;
 
                     document
                         .getElementById('rateMethod')

@@ -257,7 +257,7 @@ class BookingController extends Controller
                             $paymentAmount,
 
                         'type' =>
-                            'invoice_payment',
+                            'income',
 
                         'reference_type' =>
                             'booking',

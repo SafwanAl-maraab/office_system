@@ -99,6 +99,38 @@ class ExchangeRateController extends Controller
         );
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'from_currency_id' => 'required|exists:currencies,id',
+            'to_currency_id'   => 'required|exists:currencies,id',
+            'rate'             => 'required|numeric|min:0.000001'
+        ]);
+
+        // حظر اختيار نفس العملتين للتعديل
+        if ($request->from_currency_id == $request->to_currency_id) {
+            return back()->with('error', 'لا يمكن اختيار نفس العملة كطرفي صرف');
+        }
+
+        $branchId = auth()->user()->employee->branch_id;
+
+        // جلب سجل سعر الصرف والتحقق من تبعيته لنفس الفرع لأمان البيانات
+        $rate = ExchangeRate::where('branch_id', $branchId)->findOrFail($id);
+
+        // تحديث البيانات بقيم الصرف الجديدة
+        $rate->update([
+            'from_currency_id' => $request->from_currency_id,
+            'to_currency_id'   => $request->to_currency_id,
+            'rate'             => $request->rate,
+            'rate_date'        => now()->toDateString(), // تحديث تاريخ السعر لليوم
+            'created_by'       => auth()->user()->employee->id
+        ]);
+
+        return back()->with('success', 'تم تحديث سعر الصرف بنجاح');
+    }
+
+
+
     public function findRate(Request $request)
     {
         $employee =

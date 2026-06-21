@@ -101,14 +101,14 @@
             عرض التأشيرات
         </a>
 
-        <a href="{{ route('trip-groups.index') }}"
-           class="block px-3 py-2 rounded-xl text-sm transition
-           {{ request()->routeIs('trip-groups.*')
-                ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-           }}">
-            الحملات
-        </a>
+{{--        <a href="{{ route('trip-groups.index') }}"--}}
+{{--           class="block px-3 py-2 rounded-xl text-sm transition--}}
+{{--           {{ request()->routeIs('trip-groups.*')--}}
+{{--                ? 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300'--}}
+{{--                : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'--}}
+{{--           }}">--}}
+{{--            الحملات--}}
+{{--        </a>--}}
 
         <a href="{{ route('visa-types.index') }}"
    class="block px-3 py-2 rounded-xl text-sm transition
@@ -127,67 +127,69 @@
 
 </div>
 
-        <!-- PASSPORTS -->
-        <div>
+        <!-- PASSPORTS SECTION -->
+        <div x-data="{
+        openMenu: {{ request()->routeIs('dashboard.requests.*', 'dashboard.travels.*', 'dashboard.request-types.*') ? "'passports'" : "null" }}
+     }">
 
-            @php
-                $isPassportsActive =
-                    request()->routeIs('dashboard.requests.*') ||
-                   request()->routeIs('dashboard.travels.*') ||
-                    request()->routeIs('dashboard.request-types.*');
-            @endphp
-
+            <!-- زر القائمة الرئيسي -->
             <button
-                @click="openMenu === 'passports' ? openMenu=null : openMenu='passports'"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition
-        {{ $isPassportsActive
-            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}"
+                @click="openMenu === 'passports' ? openMenu = null : openMenu = 'passports'"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 font-medium group
+        {{ request()->routeIs('dashboard.requests.*', 'dashboard.travels.*', 'dashboard.request-types.*')
+            ? 'bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/50' }}"
             >
-
+                <!-- الأيقونة والنص -->
                 <div class="flex items-center gap-3">
-                    <span>🪪</span>
-                    <span x-show="!collapsed" class="text-sm font-medium">
+                    <!-- أيقونة الجواز / الهوية الاحترافية -->
+                    <svg class="w-5 h-5 transition-transform duration-300 group-hover:scale-105 {{ request()->routeIs('dashboard.requests.*', 'dashboard.travels.*', 'dashboard.request-types.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                    </svg>
+                    <span x-show="!collapsed" class="text-sm navigation-label">
                 الجوازات
             </span>
                 </div>
 
-                <span x-show="!collapsed">⌄</span>
-
+                <!-- سهم القائمة المنسدلة المتحرك -->
+                <span x-show="!collapsed" class="transition-transform duration-300" :class="{ 'rotate-180': openMenu === 'passports' }">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </span>
             </button>
 
-            <div x-show="openMenu==='passports' || {{ $isPassportsActive ? 'true' : 'false' }}"
-                 class="mt-2 space-y-1 pr-8">
- <!-- الحجوزات -->
+            <!-- القائمة الفرعية (مع حركة سلاسة عند الفتح والإغلاق) -->
+            <div x-show="openMenu === 'passports'"
+                 x-collapse
+                 class="mt-1 space-y-1 pr-6 border-r-2 border-gray-100 dark:border-gray-800 mr-4">
 
-
-                <!-- الطلبات -->
+                <!-- رابط: الطلبات -->
                 <a href="{{ route('dashboard.requests.index') }}"
-                   class="block px-3 py-2 rounded-xl text-sm transition
+                   class="block px-4 py-2 rounded-lg text-sm transition-all duration-200
            {{ request()->routeIs('dashboard.requests.*')
-                ? 'bg-blue-500 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                ? 'bg-blue-600 text-white shadow-sm font-medium'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                     الطلبات
                 </a>
 
-                <!-- أنواع الطلبات -->
+                <!-- رابط: أنواع الطلبات -->
                 <a href="{{ route('dashboard.request-types.index') }}"
-                   class="block px-3 py-2 rounded-xl text-sm transition
+                   class="block px-4 py-2 rounded-lg text-sm transition-all duration-200
            {{ request()->routeIs('dashboard.request-types.*')
-                ? 'bg-blue-500 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                ? 'bg-blue-600 text-white shadow-sm font-medium'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                     أنواع الطلبات
                 </a>
-{{--                //الرحلات--}}
 
+                <!-- رابط: الرحلات البرية -->
                 <a href="{{ route('dashboard.travels.index') }}"
-                   class="block px-3 py-2 rounded-xl text-sm transition
+                   class="block px-4 py-2 rounded-lg text-sm transition-all duration-200
            {{ request()->routeIs('dashboard.travels.*')
-                ? 'bg-blue-500 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
-                   الرحلات البرية
+                ? 'bg-blue-600 text-white shadow-sm font-medium'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                    الرحلات البرية
                 </a>
-
             </div>
 
         </div>
@@ -327,9 +329,9 @@
 
 
                 {{-- إدارة الخزنة --}}
-                <a href="{{ route('dashboard.cashboxes.index') }}"
+                <a href="{{ route('cashboxes.index') }}"
                    class="block px-3 py-2 rounded-xl text-sm transition
-   {{ request()->routeIs('dashboard.cashboxes.*')
+   {{ request()->routeIs('cashboxes.*')
         ? 'bg-blue-600 text-white'
         : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
 
@@ -598,13 +600,13 @@ $agentsActive = request()->routeIs('agents.*');
 
 
                 <!--  Client -->
-                <a href="{{ route('reports.financial') }}"
-                   class="block px-3 py-2 rounded-xl text-sm transition
-           {{ request()->routeIs('reports.financial.*')
-                ? 'bg-blue-500 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">
-                التقارير
-                </a>
+{{--                <a href="{{ route('reports.financial') }}"--}}
+{{--                   class="block px-3 py-2 rounded-xl text-sm transition--}}
+{{--           {{ request()->routeIs('reports.financial.*')--}}
+{{--                ? 'bg-blue-500 text-white'--}}
+{{--                : 'hover:bg-gray-100 dark:hover:bg-gray-800' }}">--}}
+{{--                التقارير--}}
+{{--                </a>--}}
 
 
                 <a href="{{ route('reports.profit-analysis') }}"
@@ -628,6 +630,59 @@ $agentsActive = request()->routeIs('agents.*');
 
 
 
+
+
+         @php
+            $active = request()->routeIs('profile.*');
+        @endphp
+
+        <a href="{{ route('profile.edit') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ $active
+        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
+
+
+            <span>الملف الشخصي</span>
+        </a>
+
+
+
+         @php
+            $active = request()->routeIs('users.*');
+        @endphp
+
+        <a href="{{ route('users.index') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ $active
+        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
+
+
+            <span>اداره المدراء </span>
+        </a>
+
+
+        @php
+            $active = request()->routeIs('roles.*');
+        @endphp
+
+        <a href="{{ route('roles.index') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
+   {{ $active
+        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+   }}">
+
+
+            <span>الادوار والصلاحيات  </span>
+        </a>
+
+
+
+
         <!-- SETTINGS -->
 
         @php
@@ -646,37 +701,13 @@ $agentsActive = request()->routeIs('agents.*');
         </a>
 
 
-         @php
-            $active = request()->routeIs('profile.*');
-        @endphp
-
-        <a href="{{ route('profile.edit') }}"
-           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
-   {{ $active
-        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
-        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-   }}">
-
-            
-            <span>الملف الشخصي</span>
-        </a>
-
-
-
-         @php
-            $active = request()->routeIs('users.*');
-        @endphp
-
-        <a href="{{ route('users.index') }}"
-           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition
-   {{ $active
-        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm'
-        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-   }}">
-
-            
-            <span>اداره المدراء </span>
-        </a>
+        <hr class="border-gray-100 dark:border-gray-700 my-1">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="w-full text-right px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 text-xs text-red-600 font-bold">
+                🚪 تسجيل الخروج
+            </button>
+        </form>
 
 
         <!-- SPACER -->

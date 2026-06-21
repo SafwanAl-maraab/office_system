@@ -132,7 +132,7 @@
 
                             <input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 min="0.01"
                                 id="amount"
                                 name="amount"
@@ -455,80 +455,54 @@
 
     async function submitSettlement()
     {
+        const button = document.getElementById('submitSettlement');
+        const form = document.getElementById('settlementForm');
+        const formData = new FormData(form);
 
-        const form =
-            document.getElementById(
-                'settlementForm'
-            );
-
-        const formData =
-            new FormData(form);
+        // تعطيل الزر مؤقتاً لمنع التكرار أثناء الحفظ
+        button.disabled = true;
+        button.innerText = 'جاري حفظ التسوية...';
 
         try {
+            const response = await fetch("{{ route('voucher-settlements.settle') }}", {
+                method: 'POST',
+                headers: {
+                    // التأكد من جلب التوكن من الميتا أو الفورم
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value,
+                    'Accept': 'application/json' // نطلب من لارافيل رد JSON دائماً حتى لو هناك خطأ فالياديشن
+                },
+                body: formData
+            });
 
-            const response =
-                await fetch(
+            // نقرأ الرد كـ JSON مرة واحدة فقط هنا
+            const result = await response.json();
 
-                    "{{ route('voucher-settlements.settle') }}",
+            if (!response.ok) {
+                // إذا كان هناك خطأ في التحقق من المدخلات (Validation) من السيرفر
+                if (response.status === 422 && result.errors) {
+                    let errorMessages = Object.values(result.errors).flat().join("\n");
+                    alert("أخطاء في المدخلات:\n" + errorMessages);
+                } else {
+                    // أي خطأ عام آخر من السيرفر
+                    alert(result.message || 'فشل تنفيذ عملية التسوية من السيرفر');
+                }
 
-                    {
-                        method:'POST',
-
-
-                        headers:{
-                            'X-CSRF-TOKEN':
-                            document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                )
-                                .content
-                        },
-
-                        body:formData
-                    }
-                );
-
-            const result =
-                await response.json();
-
-
-
-            if(!response.ok)
-            {
-
-                const text =
-                    await response.text();
-
-                console.log(text);
-
-
-                alert(
-                    result.message
-                    ??
-                    'فشل التنفيذ'
-                );
-
+                button.disabled = false;
+                button.innerText = 'تنفيذ التسوية وحفظ';
                 return;
             }
 
-            alert(
-                result.message
-            );
-
+            // نجاح العملية
+            alert(result.message || 'تمت عملية التسوية بنجاح');
             closeSettlementModal();
-
             location.reload();
 
-        }
-        catch(error){
+        } catch (error) {
+            console.error('Fetch Error:', error);
+            alert('حدث خطأ غير متوقع في المتصفح أو انقطع الاتصال بالسيرفر');
 
-            console.error(
-                error
-            );
-
-            alert(
-                'حدث خطأ غير متوقع'
-            );
+            button.disabled = false;
+            button.innerText = 'تنفيذ التسوية وحفظ';
         }
     }
 

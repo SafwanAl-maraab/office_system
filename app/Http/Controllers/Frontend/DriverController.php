@@ -83,6 +83,7 @@ class DriverController extends Controller
         Driver::create([
             'branch_id' => $branchId,
             'name' => $request->name,
+            'type'=>$request->type ,
             'phone' => $request->phone,
             'license_number' => $request->license_number,
             'status' => $request->status,
@@ -131,28 +132,22 @@ class DriverController extends Controller
     {
         $branchId = auth()->user()->employee->branch_id;
 
+        // جلب السائق مع حساب عدد سجلاته في الجداول الحركية والتشغيلية
         $driver = Driver::withCount([
-            'travels',
-            'trips'
+            'travels',    // الرحلات الدولية
+            'busDrivers'  // التعيينات والرحلات الداخلية عبر الجدول الوسيط
         ])
             ->where('branch_id', $branchId)
             ->findOrFail($id);
 
-        if (
-            $driver->travels_count > 0 ||
-            $driver->trips_count > 0
-        ) {
-
-            return back()->withErrors([
-                'error' => 'لا يمكن حذف السائق لوجود رحلات مرتبطة به.'
-            ]);
+        // إذا كان مرتبطاً بأي جدول تشغيلي، نمنع الحذف نهائياً لحماية الحسابات والتقارير
+        if ($driver->travels_count > 0 || $driver->bus_drivers_count > 0) {
+            return back()->with('error', 'لا يمكن حذف السائق لوجود حركات مالية أو رحلات تشغيلية مرتبطة به في النظام.');
         }
 
+        // الحذف بأمان في حال كان السائق جديداً ولم يربط بأي عملية
         $driver->delete();
 
-        return back()->with(
-            'success',
-            'تم حذف السائق بنجاح.'
-        );
+        return back()->with('success', 'تم حذف السائق بنجاح.');
     }
 }

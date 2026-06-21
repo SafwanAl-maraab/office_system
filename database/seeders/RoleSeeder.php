@@ -2,68 +2,251 @@
 
 namespace Database\Seeders;
 
-
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. تنظيف الكاش الخاص بالمكتبة لتجنب أي تداخل
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]
+            ->forgetCachedPermissions();
 
-        // 2. إنشاء الصلاحيات (Permissions) الخاصة بالنظام المالي والخزائن والتقارير
-        $permissions = [
-            'view-reports',       // عرض التقارير المالية
-            'manage-cashboxes',   // إدارة الخزائن والصناديق
-            'create-expenses',    // تسجيل مصروفات
-            'create-incomes',     // تسجيل إيرادات
-            'apply-discounts',    // تطبيق خصومات
-            'full-financial-control' // تحكم مالي كامل (تعديل وحذف وإعدادات)
-        ];
+        /*
+        |--------------------------------------------------------------------------
+        | مدير عام
+        |--------------------------------------------------------------------------
+        */
 
-        foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
-        }
-
-        // 3. إنشاء الأدوار (Roles) مع إضافة نسبة الخصم والـ Guard
-
-        // أ. موظف مبيعات
-        $salesRole = Role::create([
-            'name' => 'موظف مبيعات',
-            'guard_name' => 'web',
-            'max_discount_percentage' => 5.00
-        ]);
-        // منح موظف المبيعات صلاحيات محدودة
-        $salesRole->givePermissionTo(['create-expenses', 'apply-discounts']);
-
-        // ب. مدير فرع
-        $branchManagerRole = Role::create([
-            'name' => 'مدير فرع',
-            'guard_name' => 'web',
-            'max_discount_percentage' => 15.00
-        ]);
-        // منح مدير الفرع صلاحيات أوسع تشمل التقارير والخزائن للفرع
-        $branchManagerRole->givePermissionTo([
-            'view-reports',
-            'manage-cashboxes',
-            'create-expenses',
-            'create-incomes',
-            'apply-discounts'
-        ]);
-
-        // ج. مدير عام
-        $generalManagerRole = Role::create([
+        $superAdmin = Role::firstOrCreate([
             'name' => 'مدير عام',
             'guard_name' => 'web',
-            'max_discount_percentage' => 30.00
         ]);
-        // المدير العام يمتلك كل شيء في النظام
-        $generalManagerRole->givePermissionTo(Permission::all());
+
+        $superAdmin->syncPermissions(
+            Permission::all()
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | مدير فرع
+        |--------------------------------------------------------------------------
+        */
+
+        $branchManager = Role::firstOrCreate([
+            'name' => 'مدير فرع',
+            'guard_name' => 'web',
+        ]);
+
+        $branchManager->syncPermissions([
+
+            'view.dashboard',
+
+            'view.clients',
+            'create.clients',
+            'update.clients',
+            'statement.clients',
+
+            'view.requests',
+            'create.requests',
+            'update.requests',
+            'change-status.requests',
+
+            'view.bookings',
+            'create.bookings',
+            'update.bookings',
+            'change-status.bookings',
+            'payment.bookings',
+
+            'view.visas',
+            'create.visas',
+            'update.visas',
+            'change-status.visas',
+            'payment.visas',
+
+            'view.trips',
+
+            'view.trip-groups',
+            'create.trip-groups',
+            'attach-bus.trip-groups',
+
+            'view.drivers',
+            'create.drivers',
+            'update.drivers',
+
+            'view.buses',
+            'create.buses',
+            'update.buses',
+
+            'view.bus-assignments',
+            'create.bus-assignments',
+
+            'view.payments',
+            'create.payments',
+
+            'view.invoices',
+
+            'view.expenses',
+            'create.expenses',
+
+            'view.incomes',
+            'create.incomes',
+
+            'view.cashboxes',
+
+            'view.exchange-rates',
+
+            'view.agents',
+
+            'view.financial-reports',
+            'view.profit-analysis',
+
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | محاسب
+        |--------------------------------------------------------------------------
+        */
+
+        $accountant = Role::firstOrCreate([
+            'name' => 'محاسب',
+            'guard_name' => 'web',
+        ]);
+
+        $accountant->syncPermissions([
+
+            'view.dashboard',
+
+            'view.payments',
+            'create.payments',
+
+            'view.expenses',
+            'create.expenses',
+
+            'view.incomes',
+            'create.incomes',
+
+            'view.cashboxes',
+            'create.cashboxes',
+            'update.cashboxes',
+            'transactions.cashboxes',
+
+            'view.cashbox-exchanges',
+            'create.cashbox-exchanges',
+
+            'view.exchange-rates',
+            'create.exchange-rates',
+            'update.exchange-rates',
+
+            'view.client-vouchers',
+            'create.client-vouchers',
+
+            'view.voucher-settlements',
+            'create.voucher-settlements',
+
+            'view.invoices',
+            'refund.invoices',
+            'pdf.invoices',
+
+            'view.financial-reports',
+            'export.financial-reports',
+
+            'view.profit-analysis',
+            'export.profit-analysis',
+
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | موظف حجوزات
+        |--------------------------------------------------------------------------
+        */
+
+        $bookingEmployee = Role::firstOrCreate([
+            'name' => 'موظف حجوزات',
+            'guard_name' => 'web',
+        ]);
+
+        $bookingEmployee->syncPermissions([
+
+            'view.dashboard',
+
+            'view.clients',
+            'create.clients',
+            'update.clients',
+
+            'view.bookings',
+            'create.bookings',
+            'update.bookings',
+            'payment.bookings',
+
+            'view.trips',
+
+            'view.trip-groups',
+
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | موظف تأشيرات
+        |--------------------------------------------------------------------------
+        */
+
+        $visaEmployee = Role::firstOrCreate([
+            'name' => 'موظف تأشيرات',
+            'guard_name' => 'web',
+        ]);
+
+        $visaEmployee->syncPermissions([
+
+            'view.dashboard',
+
+            'view.clients',
+            'create.clients',
+
+            'view.visas',
+            'create.visas',
+            'update.visas',
+            'change-status.visas',
+
+            'attach-trip-group.visas',
+            'attach-package.visas',
+
+            'payment.visas',
+
+            'view.visa-types',
+
+            'view.trip-groups',
+
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | موظف استقبال
+        |--------------------------------------------------------------------------
+        */
+
+        $reception = Role::firstOrCreate([
+            'name' => 'موظف استقبال',
+            'guard_name' => 'web',
+        ]);
+
+        $reception->syncPermissions([
+
+            'view.dashboard',
+
+            'view.clients',
+            'create.clients',
+
+            'view.bookings',
+
+            'view.visas',
+
+            'view.trip-groups',
+
+        ]);
     }
 }

@@ -136,25 +136,25 @@
                                 <b class="font-mono">{{ number_format($voucher->amount, 2) }}</b>
                             </div>
 
-                            <!-- 3- تصحيح اسم بيان حقل المستخدم داخل البطاقة -->
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">المستخدم من السند</span>
-                                <b class="text-indigo-600 font-mono">
-                                    {{ number_format($voucher->allocated_amount ?? $voucher->allocations_sum_amount ?? 0, 2) }}
-                                </b>
-                            </div>
+{{--                            <!-- 3- تصحيح اسم بيان حقل المستخدم داخل البطاقة -->--}}
+{{--                            <div class="flex justify-between">--}}
+{{--                                <span class="text-gray-500">المستخدم من السند</span>--}}
+{{--                                <b class="text-indigo-600 font-mono">--}}
+{{--                                    {{ number_format($voucher->allocated_amount ?? $voucher->allocations_sum_amount ?? 0, 2) }}--}}
+{{--                                </b>--}}
+{{--                            </div>--}}
 
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">المتبقي</span>
-                                <b class="text-blue-600 font-mono">
-                                    {{ number_format($voucher->amount - ($voucher->allocated_amount ?? $voucher->allocations_sum_amount ?? 0), 2) }}
-                                </b>
-                            </div>
+{{--                            <div class="flex justify-between">--}}
+{{--                                <span class="text-gray-500">المتبقي</span>--}}
+{{--                                <b class="text-blue-600 font-mono">--}}
+{{--                                    {{ number_format($voucher->amount - ($voucher->allocated_amount ?? $voucher->allocations_sum_amount ?? 0), 2) }}--}}
+{{--                                </b>--}}
+{{--                            </div>--}}
 
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">عدد التسويات</span>
-                                <b class="font-mono">{{ $voucher->allocations_count }}</b>
-                            </div>
+{{--                            <div class="flex justify-between">--}}
+{{--                                <span class="text-gray-500">عدد التسويات</span>--}}
+{{--                                <b class="font-mono">{{ $voucher->allocations_count }}</b>--}}
+{{--                            </div>--}}
 
                             <div class="flex justify-between">
                                 <span class="text-gray-500">الموظف</span>

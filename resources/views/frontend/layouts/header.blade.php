@@ -113,11 +113,11 @@
                     class="absolute left-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 space-y-1 hidden"
                     :class="{'hidden': !profileMenu}"
                 >
-                    <a href="#" class="block px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200">
+                    <a href="{{route('profile.edit') }} " class="block px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200">
                         👤 الملف الشخصي
                     </a>
-                    <a href="#" class="block px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200">
-                        ⚙️ إعدادات الحساب
+                    <a href="{{route('settings.index') }}" class="block px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200">
+                        ⚙️ إعدادات
                     </a>
                     <hr class="border-gray-100 dark:border-gray-700 my-1">
                     <form method="POST" action="{{ route('logout') }}">

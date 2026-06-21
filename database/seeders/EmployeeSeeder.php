@@ -12,13 +12,13 @@ class EmployeeSeeder extends Seeder
 {
     public function run(): void
     {
-        $branch = Branch::first();
+        $branch1 = Branch::first();
+        $branch2 = Branch::skip(1)->first();
 
-        // الآن سيقرأ من جدول roles الجديد الخاص بالمكتبة بدون أي مشاكل
         $role = Role::first();
 
         Employee::create([
-            'branch_id' => $branch->id,
+            'branch_id' => $branch1->id,
             'role_id' => $role->id,
             'full_name' => 'مدير النظام',
             'phone' => '777000111',
@@ -26,5 +26,46 @@ class EmployeeSeeder extends Seeder
             'commission_percentage' => 0,
             'status' => true,
         ]);
+
+        Employee::create([
+            'branch_id' => $branch1->id,
+            'role_id' => $role->id,
+            'full_name' => 'مالك النظام',
+            'phone' => '777000112',
+            'salary' => 0,
+            'commission_percentage' => 0,
+            'status' => true,
+        ]);
+
+        Employee::create([
+            'branch_id' => $branch2->id,
+            'role_id' => $role->id,
+            'full_name' => 'مدير فرع عمران',
+            'phone' => '777000113',
+            'salary' => 0,
+            'commission_percentage' => 0,
+            'status' => true,
+        ]);
+
+        Employee::create([
+            'branch_id' => $branch1->id,
+            'role_id' => $role->id,
+            'full_name' => 'محاسب',
+            'phone' => '777000114',
+            'salary' => 0,
+            'commission_percentage' => 0,
+            'status' => true,
+        ]);
+
+        Employee::create([
+            'branch_id' => $branch1->id,
+            'role_id' => $role->id,
+            'full_name' => 'موظف تأشيرات',
+            'phone' => '777000115',
+            'salary' => 0,
+            'commission_percentage' => 0,
+            'status' => true,
+        ]);
+
     }
 }

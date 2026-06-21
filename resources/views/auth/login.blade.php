@@ -70,7 +70,7 @@
     <div class="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 rounded-[2.5rem] overflow-hidden bg-white/60 dark:bg-white/5 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-2xl dark:shadow-none animate-enter glow-effect transition-colors duration-500">
 
         <div class="lg:col-span-5 flex flex-col justify-center bg-white/80 dark:bg-slate-950/60 p-8 sm:p-12 lg:p-14 relative z-20 transition-colors duration-500">
-            
+
             <div class="mb-10 text-center lg:text-start rtl:lg:text-right ltr:lg:text-left">
                 <img src="{{ asset('images/logo.png') }}" alt="Travel ERP Logo" class="w-36 lg:w-44 mx-auto lg:mx-0 object-contain drop-shadow-xl mb-4">
                 <h1 class="text-3xl font-bold text-slate-800 dark:text-white tracking-wide mb-2 transition-colors" data-ar="أهلاً بك مجدداً" data-en="Welcome Back">أهلاً بك مجدداً</h1>
@@ -103,7 +103,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors" data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
-                        
+
                         @if (Route::has('password.request'))
                             <a href="{{ route('password.request') }}" class="text-xs text-blue-600 dark:text-cyan-400 hover:text-blue-700 dark:hover:text-cyan-300 font-medium transition-colors" data-ar="نسيت كلمة المرور؟" data-en="Forgot Password?">
                                 نسيت كلمة المرور؟
@@ -129,10 +129,10 @@
                         </div>
                         <span class="rtl:ms-3 ltr:mr-3 text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors" data-ar="البقاء قيد تسجيل الدخول" data-en="Remember me">البقاء قيد تسجيل الدخول</span>
                     </label>
-                    
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="text-xs text-slate-500 hover:text-cyan-500 transition-colors" data-ar="إنشاء حساب جديد" data-en="Create an account">إنشاء حساب جديد</a>
-                    @endif
+
+{{--                    @if (Route::has('register'))--}}
+{{--                        <a href="{{ route('register') }}" class="text-xs text-slate-500 hover:text-cyan-500 transition-colors" data-ar="إنشاء حساب جديد" data-en="Create an account">إنشاء حساب جديد</a>--}}
+{{--                    @endif~--}}
                 </div>
 
                 <button type="submit"
@@ -155,12 +155,12 @@
                     <span class="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse"></span>
                     <span data-ar="الإصدار الأحدث من النظام" data-en="Latest System Version">الإصدار الأحدث من النظام</span>
                 </div>
-                
+
                 <h2 class="text-4xl xl:text-5xl font-extrabold text-slate-800 dark:text-white mb-6 leading-tight drop-shadow-sm dark:drop-shadow-lg transition-colors">
-                    <span data-ar="إدارة شاملة لرحلاتك" data-en="Comprehensive Travel">إدارة شاملة لرحلاتك</span> <br> 
+                    <span data-ar="إدارة شاملة لرحلاتك" data-en="Comprehensive Travel">إدارة شاملة لرحلاتك</span> <br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-400 transition-colors" data-ar="في منصة واحدة ذكية" data-en="Management in One Smart Platform">في منصة واحدة ذكية</span>
                 </h2>
-                
+
                 <p class="text-lg text-slate-600 dark:text-slate-300 max-w-lg leading-relaxed mb-10 transition-colors" data-ar="تحكم كامل في الحجوزات، التأشيرات، الحسابات المالية، والموارد البشرية بكل سهولة وبأعلى معايير الأمان المعتمدة عالمياً." data-en="Full control over bookings, visas, financial accounts, and HR with ease and the highest globally certified security standards.">
                     تحكم كامل في الحجوزات، التأشيرات، الحسابات المالية، والموارد البشرية بكل سهولة وبأعلى معايير الأمان المعتمدة عالمياً.
                 </p>
@@ -209,7 +209,7 @@
         let currentLang = 'ar';
         const htmlElement = document.documentElement;
         const langTextElement = document.getElementById('lang-text');
-        
+
         function toggleLang() {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
             htmlElement.setAttribute('lang', currentLang);
@@ -225,4 +225,4 @@
         }
     </script>
 </body>
-</html>          
+</html>

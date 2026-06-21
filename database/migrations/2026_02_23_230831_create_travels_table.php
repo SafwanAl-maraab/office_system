@@ -20,7 +20,11 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('drivers')
                 ->nullOnDelete();
+            $table->decimal('driver_cost',14,2)->default(0);
 
+            $table->foreignId('currency_id')
+                ->nullable()
+                ->constrained('currencies');
             $table->date('travel_date');
 
             $table->integer('capacity')->default(20);

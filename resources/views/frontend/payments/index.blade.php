@@ -173,77 +173,7 @@
                     <button onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-600 text-lg font-bold">✕</button>
                 </div>
 
-                {{-- منطقة السند الفعلي المطبوع --}}
-                <div id="printArea" class="space-y-6">
-
-                    {{-- ترويسة السند الرسمية --}}
-                    <div class="flex justify-between items-center border-b-2 border-dashed border-gray-200 dark:border-gray-700 pb-5">
-                        <div>
-                            <h2 id="modalTypeBadge" class="text-xl font-black text-gray-900 dark:text-white">
-                                --
-                            </h2>
-                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mt-1">
-                                {{ config('app.name', 'نظام السفر والحسابات') }}
-                            </p>
-                        </div>
-                        <div class="text-left">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase font-mono block">رقم السند المرجعي</span>
-                            <span id="modalReceiptId" class="text-2xl font-black font-mono text-blue-600">#00</span>
-                        </div>
-                    </div>
-
-                    {{-- خانة السعر الضخم --}}
-                    <div class="bg-gray-50 dark:bg-gray-950 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
-                        <span class="text-xs text-gray-400 font-medium block">المبلغ المقبوض والمثبت بالحساب</span>
-                        <div class="text-3xl font-black font-mono text-gray-900 dark:text-white mt-1.5">
-                            <span id="modalAmount">0.00</span>
-                            <span id="modalCurrency" class="text-sm font-bold text-blue-600">--</span>
-                        </div>
-                    </div>
-
-                    {{-- جدول حقول تفاصيل السند المالي --}}
-                    <div class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-                        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800/50">
-                            <span class="text-gray-400">استلمنا من السيد / السيدة:</span>
-                            <span id="modalClientName" class="font-bold text-gray-900 dark:text-white">--</span>
-                        </div>
-
-                        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800/50">
-                            <span class="text-gray-400">وذلك لدفعه عن الفاتورة الملحقة:</span>
-                            <span id="modalInvoiceId" class="font-mono font-bold text-gray-800 dark:text-gray-200">--</span>
-                        </div>
-
-                        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800/50">
-                            <span class="text-gray-400">طريقة وقناة السداد المالي:</span>
-                            <span id="modalPaymentMethod" class="font-medium">--</span>
-                        </div>
-
-                        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800/50">
-                            <span class="text-gray-400">تاريخ تحرير السند الزمني:</span>
-                            <span id="modalDate" class="font-mono text-xs text-gray-500">--</span>
-                        </div>
-
-                        <div class="flex justify-between py-2">
-                            <span class="text-gray-400">أمين الصندوق المسؤول:</span>
-                            <span id="modalCreatorName" class="font-bold text-xs">--</span>
-                        </div>
-                    </div>
-
-                    {{-- قسم التواقيع والختم الرسمي للطباعة --}}
-                    <div class="pt-8 border-t border-dashed border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-4 text-center text-xs">
-                        <div>
-                            <p class="text-gray-400">توقيع المستلم / العميل</p>
-                            <div class="h-12"></div>
-                            <p class="border-t border-gray-200 dark:border-gray-800 pt-2 font-medium">............................</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">ختم وتوقيع أمين الصندوق</p>
-                            <div class="h-12"></div>
-                            <p class="border-t border-gray-200 dark:border-gray-800 pt-2 font-bold text-blue-600">{{ config('app.name') }}</p>
-                        </div>
-                    </div>
-
-                </div>
+                @include('frontend.payments.modals.show_payment')
 
                 {{-- أزرار ذيل المودال للطباعة الفورية --}}
                 <div class="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800 flex gap-3 print:hidden">
@@ -262,7 +192,7 @@
     @include('frontend.payments.modals.add_payment')
 
     {{-- ========================================== --}}
-    {{-- سْكْرِيبْتْ جَافَا سْكْرِيبْتْ لِلتَّحَكُّمِ التَّفَاعُلِيّ --}}
+    {{-- سْكْرِيبْتْ جَافَا سْكْرِيبْتْ لِلتَّحَكُّمِ التَّفَاعُلِيّ المطور --}}
     {{-- ========================================== --}}
     <script>
         function showReceiptModal(data) {
@@ -276,14 +206,35 @@
             document.getElementById('modalDate').innerText = data.date;
             document.getElementById('modalCreatorName').innerText = data.creator;
 
-            // تحديث ترويسة ونوع السند بناءً على الحالة
+            // كود التحديث الاحترافي لدعم حالتي القبض والصرف بالكامل
             const typeBadge = document.getElementById('modalTypeBadge');
+            const amountBox = document.getElementById('modalAmountBox');
+            const amountLabel = document.getElementById('modalAmountLabel');
+            const clientLabel = document.getElementById('modalClientLabel');
+            const signatureLabel = document.getElementById('modalSignatureLabel');
+
             if(data.type === 'refund') {
-                typeBadge.innerText = 'سند صرف مسترجع رحلة';
-                typeBadge.className = "text-xl font-black text-rose-600";
+                // في حالة المرجوع (سند صرف)
+                typeBadge.innerText = 'سند صرف مالي (مسترجع)';
+                typeBadge.className = "text-xl font-black text-rose-600 dark:text-rose-400";
+
+                amountBox.className = "bg-rose-50/60 dark:bg-rose-950/20 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/40 text-center";
+                amountLabel.innerText = "المبلغ المصروف والمعاد للعميل";
+                amountLabel.className = "text-xs text-rose-500 font-medium block";
+
+                clientLabel.innerText = "صرفنا للسيد / السيدة:";
+                signatureLabel.innerText = "توقيع المستلم (العميل)";
             } else {
+                // في حالة المدفوع (سند قبض طبيعي)
                 typeBadge.innerText = 'سند قبض واستلام نقدي';
-                typeBadge.className = "text-xl font-black text-emerald-600";
+                typeBadge.className = "text-xl font-black text-emerald-600 dark:text-emerald-400";
+
+                amountBox.className = "bg-emerald-50/60 dark:bg-emerald-950/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 text-center";
+                amountLabel.innerText = "المبلغ المقبوض والمثبت بالحساب";
+                amountLabel.className = "text-xs text-emerald-500 font-medium block";
+
+                clientLabel.innerText = "استلمنا من السيد / السيدة:";
+                signatureLabel.innerText = "توقيع المسدد (العميل)";
             }
 
             // إظهار المودال بالكامل في الشاشة
@@ -298,13 +249,11 @@
     {{-- تخصيص معايير الـ CSS لإنتاج طباعة نظيفة ورسمية --}}
     <style>
         @media print {
-            /* إخفاء عناصر النظام والروابط والخلفيات */
             body * {
                 visibility: hidden;
                 background-color: transparent !important;
                 box-shadow: none !important;
             }
-            /* تحديد مساحة السند المالي فقط وإظهارها للطباعة بالكامل */
             #receiptModal, #receiptModal * {
                 visibility: visible;
             }

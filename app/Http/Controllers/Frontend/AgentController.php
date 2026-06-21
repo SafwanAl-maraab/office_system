@@ -422,61 +422,33 @@ return back()->with('success','تم تحديث الوكيل');
 | كشف حساب وكيل PDF
 |--------------------------------------------------------------------------
 */
-public function statementPDF($id)
-{
+    public function statementPDF($id)
+    {
+        $agent = Agent::findOrFail($id);
 
-$agent = Agent::findOrFail($id);
+        $transactions = AgentTransaction::with(['currency','visa'])
+            ->where('agent_id',$agent->id)
+            ->orderBy('created_at')
+            ->get();
 
-$transactions = AgentTransaction::with(['currency','visa'])
-->where('agent_id',$agent->id)
-->orderBy('created_at')
-->get();
+        /*
+        |--------------------------------
+        | الرصيد التراكمي
+        |--------------------------------
+        |*/
+        $balance = 0;
+        foreach($transactions as $t){
+            $balance += $t->amount;
+            $t->balance_after = $balance;
+        }
 
-/*
-|--------------------------------
-| الرصيد التراكمي
-|--------------------------------
-*/
+        // نمرر المتغير بشكل طبيعي لملف الـ Blade
+        $pdf = Pdf::loadView('frontend.agents.pdf.statement', compact('agent', 'transactions', 'balance'))
+            ->setPaper('A4', 'portrait')
+            ->setOption(['defaultFont' => 'DejaVu Sans']);
 
-$balance = 0;
-
-foreach($transactions as $t){
-
-$balance += $t->amount;
-
-$t->balance_after = $balance;
-
-}
-
-/*
-|--------------------------------
-| اصلاح العربية
-|--------------------------------
-*/
-
-$Arabic = new Arabic();
-$Arabic->setMaxChars(5000);
-
-$html = view(
-'frontend.agents.pdf.statement',
-compact('agent','transactions','balance')
-)->render();
-
-$html = $Arabic->utf8Glyphs($html);
-
-/*
-|--------------------------------
-| إنشاء PDF
-|--------------------------------
-*/
-
-$pdf = Pdf::loadHTML($html)
-->setPaper('A4');
-
-return $pdf->download('agent-statement-'.$agent->id.'.pdf');
-
-}
-
+        return $pdf->download('agent-statement-'.$agent->id.'.pdf');
+    }
 /*
 |--------------------------------------------------------------------------
 | كشف حساب جميع الوكلاء

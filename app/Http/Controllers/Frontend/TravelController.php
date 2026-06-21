@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Travel;
 use App\Models\Driver;
+use App\Models\Currency; // استدعاء موديل العملات
 use Illuminate\Http\Request;
 
 class TravelController extends Controller
@@ -16,7 +17,8 @@ class TravelController extends Controller
     {
         $branchId = auth()->user()->employee->branch_id;
 
-        $travels = Travel::with(['driver'])
+        // جلب الرحلات مع السائق والعملة المرتبطة بها
+        $travels = Travel::with(['driver', 'currency'])
             ->withCount('requests')
             ->where('branch_id', $branchId)
             ->latest()
@@ -27,8 +29,11 @@ class TravelController extends Controller
             ->where('status', 'active')
             ->get();
 
+        // جلب العملات النشطة لتغذية القوائم المنسدلة في المودالات
+        $currencies = Currency::where('status', true)->get();
+
         return view('frontend.travels.index',
-            compact('travels', 'drivers'));
+            compact('travels', 'drivers', 'currencies'));
     }
 
     /**
@@ -44,6 +49,8 @@ class TravelController extends Controller
             'to_location'   => 'required|string|max:150',
             'capacity'      => 'required|integer|min:1',
             'driver_id'     => 'required|exists:drivers,id',
+            'driver_cost'   => 'required|numeric|min:0', // التحقق من الأجرة
+            'currency_id'   => 'required|exists:currencies,id', // التحقق من العملة
             'notes'         => 'nullable|string',
         ]);
 
@@ -54,6 +61,8 @@ class TravelController extends Controller
             'to_location'   => $request->to_location,
             'capacity'      => $request->capacity,
             'driver_id'     => $request->driver_id,
+            'driver_cost'   => $request->driver_cost, // حفظ الأجرة
+            'currency_id'   => $request->currency_id, // حفظ العملة
             'notes'         => $request->notes,
         ]);
 
@@ -67,15 +76,16 @@ class TravelController extends Controller
     {
         $branchId = auth()->user()->employee->branch_id;
 
+        // جلب تفاصيل الرحلة مع العملة وعلاقات الطلبات والعملاء
         $travel = Travel::with([
             'driver',
+            'currency',
             'requests.client'
         ])
             ->where('branch_id', $branchId)
             ->findOrFail($id);
 
-        return view('frontend.travels.show',
-            compact('travel'));
+        return view('frontend.travels.show', compact('travel'));
     }
 
     /**
@@ -88,12 +98,21 @@ class TravelController extends Controller
         $travel = Travel::where('branch_id', $branchId)
             ->findOrFail($id);
 
+        // إذا كان الطلب قادم لتحديث الحالة فقط (إنهاء الرحلة من صفحة show)
+        if ($request->has('status') && $request->status === 'completed') {
+            $travel->update(['status' => 'completed']);
+            return back()->with('success', 'تم إنهاء الرحلة بنجاح وإغلاق مقاعدها.');
+        }
+
+        // قواعد التحقق الكاملة عند استخدام مودال التعديل الرئيسي
         $request->validate([
             'travel_date'   => 'required|date',
             'from_location' => 'required|string|max:150',
             'to_location'   => 'required|string|max:150',
             'capacity'      => 'required|integer|min:1',
             'driver_id'     => 'required|exists:drivers,id',
+            'driver_cost'   => 'required|numeric|min:0',
+            'currency_id'   => 'required|exists:currencies,id',
             'notes'         => 'nullable|string',
         ]);
 
@@ -103,10 +122,12 @@ class TravelController extends Controller
             'to_location'   => $request->to_location,
             'capacity'      => $request->capacity,
             'driver_id'     => $request->driver_id,
+            'driver_cost'   => $request->driver_cost,
+            'currency_id'   => $request->currency_id,
             'notes'         => $request->notes,
         ]);
 
-        return back()->with('success', 'تم تحديث الرحلة.');
+        return back()->with('success', 'تم تحديث بيانات الرحلة بنجاح.');
     }
 
     /**
@@ -130,7 +151,7 @@ class TravelController extends Controller
         if ($travel->requests_count > 0) {
             return redirect()
                 ->route('dashboard.travels.index')
-                ->withErrors(['error' => 'لا يمكن حذف رحلة مرتبطة بطلبات.']);
+                ->withErrors(['error' => 'لا يمكن حذف رحلة مرتبطة بطلبات حجز فعلية لحماية التقارير الحسابية.']);
         }
 
         $travel->delete();

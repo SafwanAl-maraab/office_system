@@ -22,11 +22,14 @@
 
                 <div class="flex items-center gap-3">
                     {{-- زر إضافة حجز جديد --}}
+                    {{-- زر إضافة حجز جديد المعدل --}}
                     <button
-                        data-open-booking
+                        type="button"
+                        onclick="openBookingModal()"
                         class="w-full sm:w-auto px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-600/10 flex items-center justify-center gap-1.5">
                         <span>+</span> حجز رحلة جديدة
                     </button>
+
                 </div>
             </div>
 

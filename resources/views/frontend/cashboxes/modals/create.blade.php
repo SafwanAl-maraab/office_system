@@ -12,7 +12,7 @@
         </h2>
 
         <form method="POST"
-              action="{{ route('dashboard.cashboxes.store') }}">
+              action="{{ route('cashboxes.store') }}">
 
             @csrf
 

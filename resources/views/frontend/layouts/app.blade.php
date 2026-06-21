@@ -17,8 +17,9 @@
     <title>{{ $info->office_name ?? 'Office System' }}</title>
 
     @vite(['resources/css/app.css','resources/js/app.js'])
-    
 
+    <!-- ضع هذا الرابط داخل وسم <head> في ملف app.blade.php الرئيسي -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body { font-family: system-ui, sans-serif; }
         ::-webkit-scrollbar { width: 6px; }
@@ -186,6 +187,7 @@
         @endif
 
     </div>
+</div>
 
     <script>
         function toastHandler() {

@@ -55,4 +55,10 @@ class Driver extends Model
         )->withPivot('start_at','end_at','active');
     }
 
+    // 2. علاقة تعيينات الباصات والسائقين (الجدول الوسيط الذي يربط السائق بالعمليات)
+    public function busDrivers()
+    {
+        return $this->hasMany(BusDriver::class, 'driver_id');
+    }
+
 }
